@@ -5,4 +5,6 @@ object Routes {
     const val CHAT = "chat"
     const val PROFILE = "profile"
     const val INTERVIEW = "interview"
+    const val RESULT = "Result"
+
 }

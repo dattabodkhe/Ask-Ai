@@ -1,90 +1,131 @@
 package com.example.learningai.user
 
-import android.R.attr.title
-import android.widget.Space
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.InspectorValueInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.learningai.viewmodel.InterviewViewModel
 
 @Composable
 @Preview(showSystemUi = true)
-fun UserProfileSCR (){
+fun UserProfileSCR(
+    viewModel: InterviewViewModel = viewModel()
+) {
 
-    Column (modifier = Modifier.fillMaxSize().
-    padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally){
+    val uiState by viewModel.uiState.collectAsState()
 
-        Box (modifier = Modifier.size(120.dp)
-            .background(color = MaterialTheme.colorScheme.primary,
-                shape = CircleShape
-            ),
-            contentAlignment = Alignment.Center){
-            Text(text = "DB", color = Color.White,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold)
+    val accuracy = if (uiState.attemptedCount > 0) {
+        (uiState.correctCount * 100) / uiState.attemptedCount
+    } else 0
 
-        }
-        Column(modifier = Modifier.fillMaxWidth()
-            .padding(16.dp),Arrangement.SpaceAround) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        // 🔹 Profile Avatar
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
-                text = "Datta Bodkhe", fontWeight = FontWeight.Bold,
+                text = "DB",
+                color = Color.White,
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 🔹 Profile Info
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Text(
+                text = "Datta Bodkhe",
+                fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
             )
-            HorizontalDivider(
-                modifier = Modifier.padding(top = 6.dp),
-                thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color
-            )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Text(
                 text = "Android Developer",
-                fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "learning kotlin and compose",
-                modifier = Modifier.padding(horizontal = 12.dp), lineHeight = 17.sp
+                text = "Learning Kotlin & Jetpack Compose",
+                fontSize = 14.sp
             )
-            HorizontalDivider(
-                modifier = Modifier.padding(top = 6.dp),
-                thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-            Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Edit Profile")
-            }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
 
+        // 🔹 INTERVIEW STATS SECTION
+        Text(
+            text = "Interview Stats 📊",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        StatCard(title = "Attempted Questions", value = uiState.attemptedCount)
+        StatCard(title = "Correct Answers", value = uiState.correctCount)
+        StatCard(title = "Accuracy", value = "$accuracy %")
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = { /* Edit later */ },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Edit Profile")
+        }
     }
-
 }
 
+
+
+
+
+
+
+@Composable
+fun StatCard(title: String, value: Any) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = title, fontWeight = FontWeight.Medium)
+            Text(text = value.toString(), fontWeight = FontWeight.Bold)
+        }
+    }
+}

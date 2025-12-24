@@ -1,41 +1,81 @@
-package com.example.learningai.ViewModel
-
+package com.example.learningai.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.learningai.model.Questions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+class InterviewViewModel : ViewModel() {
 
-
-class InterviewViewModel : ViewModel(){
     private val questions = listOf(
         Questions(
-            question = "What is jetpack compose?",
-            option = listOf("Ui toolkit",
-                "Api","DataBase","Complier"), correctAnswerIndex = 0
+            "What is Jetpack Compose?",
+            listOf("UI Toolkit", "API", "Database", "Compiler"),
+            0
+        ),
+        Questions(
+            "Which language is used for Jetpack Compose?",
+            listOf("Java", "Kotlin", "Python", "C++"),
+            1
+        ),
+        Questions(
+            "What does MVVM stand for?",
+            listOf(
+                "Model View ViewModel",
+                "Main View Virtual Model",
+                "Model Variable View Model",
+                "None of these"
+            ),
+            0
+        ),
+        Questions(
+            "Which component is used for navigation in Jetpack Compose?",
+            listOf(
+                "Intent",
+                "FragmentManager",
+                "NavController",
+                "Activity"
+            ),
+            2
         )
     )
 
-    private val _currentIndex = MutableStateFlow(0)
+    private val _uiState = MutableStateFlow(InterviewUiStates())
+    val uiState: StateFlow<InterviewUiStates> = _uiState
 
-    val currentIndex : StateFlow<Int> = _currentIndex
+    val currentQuestion: Questions
+        get() = questions[_uiState.value.currentIndex]
 
-    private val  _selectedOption = MutableStateFlow(-1)
-    val selectedOption : StateFlow<Int> = _selectedOption
-
-    fun selectedOption(index : Int){
-        _selectedOption.value = index
+    fun selectOption(index: Int) {
+        _uiState.value = _uiState.value.copy(selectedOption = index)
     }
-    fun nextQuestion(){
-        _currentIndex.value = _currentIndex.value + 1
-        _selectedOption.value = -1
-    }
-    val currentQuestion : Questions
-        get() = questions[_currentIndex.value]
 
+    fun submitAndNext(): Boolean {
+        val state = _uiState.value
 
-    fun  isCorrectOption(index: Int): Boolean{
-        return index == questions[_currentIndex.value].correctAnswerIndex
+        val isCorrect =
+            state.selectedOption ==
+                    questions[state.currentIndex].correctAnswerIndex
+
+        val isLast = state.currentIndex == questions.lastIndex
+
+        _uiState.value = state.copy(
+            attemptedCount = state.attemptedCount + 1,
+            correctCount = if (isCorrect)
+                state.correctCount + 1
+            else
+                state.correctCount,
+            currentIndex = if (isLast)
+                state.currentIndex
+            else
+                state.currentIndex + 1,
+            selectedOption = -1
+        )
+
+        return isLast
     }
+
+    fun resetQuiz() {
+        _uiState.value = InterviewUiStates()
+    }
+
 }
