@@ -17,38 +17,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.learningai.model.Questions
+import com.example.learningai.nav.Routes
+
 @Composable
 
-fun HomeSCR() {
-
-    var currentIndex by remember { mutableStateOf(0) }
-    var selectedOption by remember { mutableStateOf(-1) }
-
-    val sampleQuestions = listOf(
-        Questions(
-            question = "What is MVVM?",
-            option = listOf(
-                "Design Pattern",
-                "Programming Language",
-                "Database",
-                "Operating System"
-            ),
-            correctAnswerIndex = 0
-        ),
-        Questions(
-            question = "What is Jetpack Compose?",
-            option = listOf(
-                "UI Toolkit",
-                "API",
-                "Database",
-                "Compiler"
-            ),
-            correctAnswerIndex = 0
-        )
-    )
-
-    val question = sampleQuestions[currentIndex]
+fun HomeSCR(navController: NavController) {
 
     Column(
         modifier = Modifier
@@ -57,32 +32,30 @@ fun HomeSCR() {
     ) {
 
         Text(
-            text = "Interview Questions",
+            text = "Welcome 👋",
             style = MaterialTheme.typography.titleLarge
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // ✅ CORRECT CALL
-        QuestionCard(
-            questions = question,
-            selectedOption = selectedOption,
-            onOptionSelected = { selectedOption = it }
+        InterviewOptionButton(
+            title = "Interview Questions",
+            subtitle = "MCQ based questions",
+            onClick = {
+                navController.navigate(Routes.INTERVIEW)
+            }
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        InterviewOptionButton(
+            title = "Practice Test",
+            subtitle = "Timed practice tests",
+            onClick = { }
+        )
 
-        Button(
-            onClick = {
-                if (currentIndex < sampleQuestions.size - 1) {
-                    currentIndex++
-                    selectedOption = -1
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = selectedOption != -1
-        ) {
-            Text(text = "Next")
-        }
+        InterviewOptionButton(
+            title = "Notes",
+            subtitle = "Short revision notes",
+            onClick = { }
+        )
     }
 }

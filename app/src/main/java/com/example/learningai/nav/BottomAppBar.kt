@@ -16,11 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.example.learningai.nav.BottomNavItem
+import com.example.learningai.nav.Routes
 
 @Composable
-fun AppBottomBar(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+fun BottomAppBar(
+    currentRoute: String?,
+    onItemClick: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -31,48 +33,25 @@ fun AppBottomBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        BottomItem(
+        BottomNavItem(
             icon = Icons.Default.Home,
             label = "Home",
-            selected = selectedTab == 0,
-            onClick = { onTabSelected(0) }
+            selected = currentRoute == Routes.HOME,
+            onClick = { onItemClick(Routes.HOME) }
         )
 
-        BottomItem(
+        BottomNavItem(
             icon = Icons.Default.Email,
             label = "Chat",
-            selected = selectedTab == 1,
-            onClick = { onTabSelected(1) }
+            selected = currentRoute == Routes.CHAT,
+            onClick = { onItemClick(Routes.CHAT) }
         )
 
-        BottomItem(
+        BottomNavItem(
             icon = Icons.Default.Person,
             label = "Profile",
-            selected = selectedTab == 2,
-            onClick = { onTabSelected(2) }
-        )
-    }
-}
-
-@Composable
-fun BottomItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (selected) Color.Cyan else Color.White
-        )
-        Text(
-            text = label,
-            color = if (selected) Color.Cyan else Color.White
+            selected = currentRoute == Routes.PROFILE,
+            onClick = { onItemClick(Routes.PROFILE) }
         )
     }
 }

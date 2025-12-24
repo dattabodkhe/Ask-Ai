@@ -6,36 +6,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.material3.*
 import com.example.learningai.home.HomeSCR
-import com.example.learningai.ui.nav.AppBottomBar
-import com.example.learningai.user.HomeScreen
+
+import com.example.learningai.ui.nav.BottomAppBar
+
 import com.example.learningai.user.UserInputSCR
 import com.example.learningai.user.UserProfileSCR
+
+
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.*
+
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
 fun MainScreen() {
 
-    var selectedTab by remember { mutableStateOf(0) }
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
 
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        // 🔹 TOP CONTENT AREA
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            when (selectedTab) {
-                0 -> HomeScreen()
-                1 -> UserInputSCR()
-                2 -> UserProfileSCR()
-            }
+    Scaffold(
+        bottomBar = {
+            BottomAppBar(
+                currentRoute = currentRoute,
+                onItemClick = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Routes.HOME)
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
-
-
-        AppBottomBar(
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it }
+    ) { padding ->
+        AppNavGraph(
+            navController = navController,
+            modifier = Modifier.padding(padding)
         )
     }
 }
