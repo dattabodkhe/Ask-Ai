@@ -6,5 +6,6 @@ object Routes {
     const val PROFILE = "profile"
     const val INTERVIEW = "interview"
     const val RESULT = "Result"
+    const val NOTES = "notes"
 
 }

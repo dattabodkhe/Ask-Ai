@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.learningai.home.HomeSCR
 import com.example.learningai.home.InterviewScreen
+import com.example.learningai.home.NotesSCR
 import com.example.learningai.home.ResultScreen
 import com.example.learningai.user.UserInputSCR
 import com.example.learningai.user.UserProfileSCR
@@ -28,15 +29,29 @@ fun AppNavGraph(
         modifier = Modifier.padding(paddingValues)
     ) {
 
-        composable(Routes.INTERVIEW) {
+        // HOME
+        composable(Routes.HOME) {
+            HomeSCR(navController)
+        }
+
+        // INTERVIEW
+        composable("${Routes.INTERVIEW}/{subjectId}") { backStackEntry ->
+            val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
+
             InterviewScreen(
+                subjectId = subjectId,
                 viewModel = interviewViewModel,
-                onFinish = {
-                    navController.navigate(Routes.RESULT)
-                }
+                onFinish = { navController.navigate(Routes.RESULT) }
             )
         }
 
+        // ✅ NOTES (🔥 THIS WAS MISSING)
+        composable("${Routes.NOTES}/{subjectId}") { backStackEntry ->
+            val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
+            NotesSCR(subjectId)
+        }
+
+        // RESULT
         composable(Routes.RESULT) {
             ResultScreen(
                 viewModel = interviewViewModel,
@@ -45,6 +60,16 @@ fun AppNavGraph(
                     navController.popBackStack(Routes.HOME, false)
                 }
             )
+        }
+
+        // CHAT
+        composable(Routes.CHAT) {
+            UserInputSCR()
+        }
+
+        // PROFILE
+        composable(Routes.PROFILE) {
+            UserProfileSCR()
         }
     }
 }

@@ -20,8 +20,11 @@ fun MainScreen() {
                     currentRoute = currentRoute,
                     onItemClick = { route ->
                         navController.navigate(route) {
-                            popUpTo(Routes.HOME)
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
                             launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 )
