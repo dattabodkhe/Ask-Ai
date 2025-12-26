@@ -45,10 +45,10 @@ fun AppNavGraph(
             )
         }
 
-        // ✅ NOTES (🔥 THIS WAS MISSING)
-        composable("${Routes.NOTES}/{subjectId}") { backStackEntry ->
-            val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
-            NotesSCR(subjectId)
+        //  NOTES
+        composable("${Routes.NOTES}/{subject}") { backStackEntry ->
+            val subject = backStackEntry.arguments?.getString("subject") ?: ""
+            NotesSCR(subject = subject)
         }
 
         // RESULT

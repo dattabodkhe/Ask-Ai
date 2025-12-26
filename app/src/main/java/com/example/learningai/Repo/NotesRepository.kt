@@ -1,19 +1,31 @@
-package com.example.learningai.Repo
+package com.example.learningai.repo
 
-
+import com.example.learningai.model.Note
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 class NotesRepository {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
-    suspend fun getNotes(subjectId: String): String {
-        val doc = db.collection("notes")
+    fun getNotes(subjectId: String): Flow<Note> = callbackFlow {
+
+        val listener = firestore
+            .collection("notes")
             .document(subjectId)
-            .get()
-            .await()
+            .addSnapshotListener { snapshot, error ->
 
-        return doc.getString("content") ?: "No notes found"
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+
+                val note = snapshot?.toObject(Note::class.java)
+                if (note != null) trySend(note)
+            }
+
+        awaitClose { listener.remove() }
     }
 }

@@ -40,19 +40,35 @@ android {
         compose = true
     }
 }
-
 dependencies {
+
+    //  Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.generativeai)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.runtime)
+
+    //  Navigation
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    //  Firebase BOM
+    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+
+    //  Firestore (Notes + Interview Questions)
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    //  Firebase Analytics (optional)
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // 🔹 Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -60,20 +76,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    dependencies {
-
-        // 🔥 Firebase BOM (IMPORTANT)
-        implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
-
-        // 🔥 Firebase Firestore
-        implementation("com.google.firebase:firebase-firestore-ktx")
-
-        // 🔥 Firebase Analytics (optional but recommended)
-        implementation("com.google.firebase:firebase-analytics-ktx")
-
-        // 🔥 Compose Navigation
-        implementation("androidx.navigation:navigation-compose:2.7.7")
-    }
-
 }
