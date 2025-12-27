@@ -8,12 +8,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.learningai.home.HomeSCR
-import com.example.learningai.home.InterviewScreen
-import com.example.learningai.home.NotesSCR
-import com.example.learningai.home.ResultScreen
-import com.example.learningai.user.UserInputSCR
-import com.example.learningai.user.UserProfileSCR
+import com.example.learningai.Admin.AdminScreen
+import com.example.learningai.home.*
+import com.example.learningai.user.*
 import com.example.learningai.viewmodel.InterviewViewModel
 
 @Composable
@@ -21,6 +18,7 @@ fun AppNavGraph(
     navController: NavHostController,
     paddingValues: PaddingValues
 ) {
+
     val interviewViewModel: InterviewViewModel = viewModel()
 
     NavHost(
@@ -29,47 +27,43 @@ fun AppNavGraph(
         modifier = Modifier.padding(paddingValues)
     ) {
 
-        // HOME
         composable(Routes.HOME) {
             HomeSCR(navController)
         }
 
-        // INTERVIEW
-        composable("${Routes.INTERVIEW}/{subjectId}") { backStackEntry ->
-            val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
+        composable("${Routes.INTERVIEW}/{subjectId}") { backStack ->
+            val subjectId = backStack.arguments?.getString("subjectId") ?: ""
 
             InterviewScreen(
                 subjectId = subjectId,
                 viewModel = interviewViewModel,
-                onFinish = { navController.navigate(Routes.RESULT) }
+                onFinish = {
+                    navController.navigate("${Routes.RESULT}/$subjectId")
+                }
             )
         }
 
-        //  NOTES
-        composable("${Routes.NOTES}/{subject}") { backStackEntry ->
-            val subject = backStackEntry.arguments?.getString("subject") ?: ""
-            NotesSCR(subject = subject)
-        }
+        composable("${Routes.RESULT}/{subjectId}") { backStack ->
+            val subjectId = backStack.arguments?.getString("subjectId") ?: ""
 
-        // RESULT
-        composable(Routes.RESULT) {
             ResultScreen(
+                subjectId = subjectId,
                 viewModel = interviewViewModel,
-                onRetry = {
+                onFinish = {
                     interviewViewModel.resetQuiz()
                     navController.popBackStack(Routes.HOME, false)
                 }
             )
         }
 
-        // CHAT
-        composable(Routes.CHAT) {
-            UserInputSCR()
+        composable(Routes.CHAT) { UserInputSCR() }
+
+        composable(Routes.PROFILE) {
+            UserProfileSCR(navController)
         }
 
-        // PROFILE
-        composable(Routes.PROFILE) {
-            UserProfileSCR()
+        composable(Routes.ADMIN) {
+            AdminScreen()
         }
     }
 }

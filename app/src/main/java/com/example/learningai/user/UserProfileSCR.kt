@@ -1,6 +1,7 @@
 package com.example.learningai.user
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -9,123 +10,80 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.learningai.admin.AdminViewModel
+import com.example.learningai.nav.Routes
 import com.example.learningai.viewmodel.InterviewViewModel
 
 @Composable
-@Preview(showSystemUi = true)
 fun UserProfileSCR(
-    viewModel: InterviewViewModel = viewModel()
+    navController: NavController,
+    interviewViewModel: InterviewViewModel = viewModel(),
+    adminViewModel: AdminViewModel = viewModel()
 ) {
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by interviewViewModel.uiState.collectAsState()
+    val isAdmin by adminViewModel.isAdmin.collectAsState()
 
-    val accuracy = if (uiState.attemptedCount > 0) {
-        (uiState.correctCount * 100) / uiState.attemptedCount
-    } else 0
+    var tapCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        adminViewModel.checkAdmin()
+    }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // 🔹 Profile Avatar
+        // 🔐 ADMIN HIDDEN ENTRY
+        Text(
+            text = "Profile",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable {
+                tapCount++
+                if (tapCount == 5 && isAdmin) {
+                    navController.navigate(Routes.ADMIN)
+                    tapCount = 0
+                }
+            }
+        )
+
+        Spacer(Modifier.height(16.dp))
+
         Box(
             modifier = Modifier
                 .size(120.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = CircleShape
-                ),
+                .background(MaterialTheme.colorScheme.primary, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "DB",
-                color = Color.White,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text("DB", color = Color.White, fontSize = 36.sp)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
 
-        // 🔹 Profile Info
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Text("Interview Stats 📊", fontWeight = FontWeight.Bold)
 
-            Text(
-                text = "Datta Bodkhe",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Android Developer",
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Learning Kotlin & Jetpack Compose",
-                fontSize = 14.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 🔹 INTERVIEW STATS SECTION
-        Text(
-            text = "Interview Stats 📊",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        StatCard(title = "Attempted Questions", value = uiState.attemptedCount)
-        StatCard(title = "Correct Answers", value = uiState.correctCount)
-        StatCard(title = "Accuracy", value = "$accuracy %")
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { /* Edit later */ },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Edit Profile")
-        }
+        StatCard("Attempted", uiState.attemptedCount)
+        StatCard("Correct", uiState.correctCount)
     }
 }
-
-
-
-
-
-
 
 @Composable
 fun StatCard(title: String, value: Any) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = title, fontWeight = FontWeight.Medium)
-            Text(text = value.toString(), fontWeight = FontWeight.Bold)
+            Text(title)
+            Text(value.toString(), fontWeight = FontWeight.Bold)
         }
     }
 }

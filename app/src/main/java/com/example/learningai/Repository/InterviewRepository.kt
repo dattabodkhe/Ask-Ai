@@ -1,4 +1,4 @@
-package com.example.learningai.Repo
+package com.example.learningai.Repository
 
 import com.example.learningai.model.InterviewQuestion
 import com.google.firebase.firestore.FirebaseFirestore

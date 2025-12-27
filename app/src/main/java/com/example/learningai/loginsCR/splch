@@ -1,9 +1,25 @@
 
 */Firestore se Notes bhi Flow me load
-2️⃣ Result screen → Firebase save score
+2️⃣ Result screen → Firebase save score// completed
 3️⃣ Offline cache (Room + Firestore)
 4️⃣ Admin panel design (future)
+
 1️⃣ Result Screen UI
 2️⃣ Firestore se Notes Flow
 3️⃣ Offline cache (Room)
 4️⃣ Admin Panel design
+
+🔜 Next logical steps (jab bole):
+1️⃣ Result history screen
+2️⃣ User-wise leaderboard
+3️⃣ Offline cache (Room)
+4️⃣ Firebase Auth connect
+
+admin SCR
+
+1️⃣ Admin se Firestore me Add Question UI
+2️⃣ Admin se Add Notes UI
+3️⃣ Admin role based UI restrictions
+1️⃣ Admin → Add Question Form
+2️⃣ Firestore rules (admin only write)
+3️⃣ Admin analytics dashboard
