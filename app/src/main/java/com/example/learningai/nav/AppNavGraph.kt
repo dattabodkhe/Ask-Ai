@@ -2,16 +2,20 @@ package com.example.learningai.nav
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.learningai.Admin.AdminScreen
+import com.example.learningai.Admin.AdminDashboardScreen
+
 import com.example.learningai.home.*
 import com.example.learningai.user.*
-import com.example.learningai.viewmodel.InterviewViewModel
+
+import com.example.learningai.Admin.AddQuestionScreen
+import com.example.learningai.ViewModel.InterviewViewModel
 
 @Composable
 fun AppNavGraph(
@@ -63,7 +67,15 @@ fun AppNavGraph(
         }
 
         composable(Routes.ADMIN) {
-            AdminScreen()
+            AdminDashboardScreen(navController)
+        }
+
+        composable("add_question") {
+            AddQuestionScreen()
+        }
+
+        composable("add_notes") {
+            Text("Add Notes Screen (Coming Soon)")
         }
     }
 }

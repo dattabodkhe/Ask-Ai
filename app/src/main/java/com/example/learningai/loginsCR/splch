@@ -23,3 +23,28 @@ admin SCR
 1️⃣ Admin → Add Question Form
 2️⃣ Firestore rules (admin only write)
 3️⃣ Admin analytics dashboard
+Admin → Add Notes
+Admin → Edit/Delete Question
+1️⃣ Firestore Edit / Delete Question
+2️⃣ Admin ke liye Question List screen
+3️⃣ Proper AdminViewModel + Repository
+4️⃣ Admin security (Firestore rules)
+1️⃣ Admin → Edit / Delete Question
+2️⃣ Result History Screen (User past scores)
+3️⃣ Leaderboard (optional 🔥)
+🔜 Next Logical Steps (Suggest kar raha hoon)
+1️⃣ Firestore real CRUD connect (questions live fetch/update)
+2️⃣ Admin Firebase Rules (admin-only write access)
+3️⃣ Result history screen (per user)
+4️⃣ UI polish (progress bar, animations)
+5️⃣ Deploy APK / Play Store prep
+InterviewViewModel ko repository se connect karna (User side fetch)
+👉 Step 3B:
+AdminViewModel ko Firestore CRUD se connect karna (Add / Edit / Delete real)
+👉 Step 3C:
+Firebase Security Rules (Admin-only access) 🔐
+🔜 NEXT STEPS (choose one)
+1️⃣ Admin Firestore CRUD fully connect
+2️⃣ Firestore Security Rules (admin-only write)
+3️⃣ Offline cache (Room + Firestore)
+4️⃣ Analytics / progress per subject

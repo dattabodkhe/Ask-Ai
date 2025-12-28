@@ -24,8 +24,8 @@ fun OptionItem(
     onClick: () -> Unit
 ) {
     val bgColor = when {
-        isCorrect == true -> Color(0xFFB9F6CA)   // green
-        isCorrect == false -> Color(0xFFFFCDD2) // red
+        isCorrect == true -> Color(0xFF77EC98)   // green
+        isCorrect == false -> Color(0xFFE05361) // red
         isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
         else -> MaterialTheme.colorScheme.surface
     }

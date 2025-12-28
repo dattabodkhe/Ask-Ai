@@ -78,4 +78,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     //firebase Auth
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("io.noties.markwon:core:4.6.2")
 }

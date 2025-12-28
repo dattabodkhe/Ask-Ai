@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.learningai.admin.AdminViewModel
+import com.example.learningai.Admin.AdminViewModel
 import com.example.learningai.nav.Routes
-import com.example.learningai.viewmodel.InterviewViewModel
+import com.example.learningai.ViewModel.InterviewViewModel
 
 @Composable
 fun UserProfileSCR(
@@ -24,22 +24,17 @@ fun UserProfileSCR(
     interviewViewModel: InterviewViewModel = viewModel(),
     adminViewModel: AdminViewModel = viewModel()
 ) {
-
     val uiState by interviewViewModel.uiState.collectAsState()
     val isAdmin by adminViewModel.isAdmin.collectAsState()
 
-    var tapCount by remember { mutableIntStateOf(0) }
+    var tapCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         adminViewModel.checkAdmin()
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(Modifier.padding(16.dp)) {
 
-        // 🔐 ADMIN HIDDEN ENTRY
         Text(
             text = "Profile",
             fontSize = 22.sp,
@@ -55,21 +50,8 @@ fun UserProfileSCR(
 
         Spacer(Modifier.height(16.dp))
 
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("DB", color = Color.White, fontSize = 36.sp)
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Text("Interview Stats 📊", fontWeight = FontWeight.Bold)
-
-        StatCard("Attempted", uiState.attemptedCount)
-        StatCard("Correct", uiState.correctCount)
+        Text("Attempted: ${uiState.attemptedCount}")
+        Text("Correct: ${uiState.correctCount}")
     }
 }
 

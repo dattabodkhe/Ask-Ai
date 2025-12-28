@@ -1,30 +1,33 @@
 package com.example.learningai.Admin
 
-
-
 import com.example.learningai.model.InterviewQuestion
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
-object AdminRepository {
+class AdminRepository {
 
     private val db = FirebaseFirestore.getInstance()
 
-    suspend fun isAdminUser(): Boolean {
-        val email = FirebaseAuth.getInstance().currentUser?.email ?: return false
-
-        val doc = db.collection("admin_config")
-            .document("admins")
-            .get()
-            .await()
-
-        val emails = doc.get("emails") as? List<*> ?: emptyList<String>()
-        return emails.contains(email)
+    suspend fun getAllQuestions(): List<Pair<String, InterviewQuestion>> {
+        val snap = db.collection("interview_questions").get().await()
+        return snap.documents.mapNotNull { doc ->
+            doc.toObject(InterviewQuestion::class.java)?.let {
+                doc.id to it
+            }
+        }
     }
-    suspend fun addQuestion(question: InterviewQuestion){
-        db.collection("interview_question")
-            .add(question)
+
+    suspend fun deleteQuestion(docId: String) {
+        db.collection("interview_questions").document(docId).delete().await()
+    }
+
+    suspend fun updateQuestion(
+        docId: String,
+        question: InterviewQuestion
+    ) {
+        db.collection("interview_questions")
+            .document(docId)
+            .set(question)
             .await()
     }
 }
