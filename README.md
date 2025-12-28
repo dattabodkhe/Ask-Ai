@@ -1,40 +1,61 @@
-# 📚 LearningAI – Multi-Subject Learning App (Android)
+LearningAI – Multi-Subject Learning App (Android)
 
-LearningAI is a modern Android learning application built using Jetpack Compose, MVVM architecture, and Firebase.  
-It helps users learn multiple subjects like App Development, Web Development, DSA, and AI/ML with interview questions and notes.
+LearningAI ek modern Android learning application hai jo students aur beginners ko multiple tech subjects me strong banane ke liye design kiya gaya hai.
+App Jetpack Compose, MVVM architecture, aur StateFlow use karta hai — scalable aur future AI-ready structure ke sath.
 
----
+✨ Key Highlights
 
-## 🚀 Features
+📱 100% Jetpack Compose UI
 
-### 🏠 Home Screen
-- Subject-based cards
-- Clean UI with modern Material 3 design
-- Subjects:
-  - App Development
-  - Web Development
-  - DSA
-  - AI / ML
+🧠 Clean MVVM Architecture
 
-### ❓ Interview Questions
-- Subject-wise MCQ questions
-- Single Source of Truth (StateFlow)
-- Score tracking:
-  - Attempted questions
-  - Correct answers
-- Result summary screen
+🔄 Single Source of Truth (StateFlow)
 
-### 📝 Notes Section
-- Subject-wise notes
-- Scrollable and readable format
-- Firebase-ready (dynamic content support)
+🎯 Interview-focused MCQs
 
-### 👤 Profile & Chat
-- Profile screen UI
-- Chat screen placeholder (future AI integration)
+📚 Subject-wise Notes
 
----
+☁ Firebase-ready (dynamic data support)
 
-## 🧠 Architecture
+🤖 Future AI Chat integration ready
 
-This project follows MVVM (Model–View–ViewModel) architecture:
+🚀 Features
+🏠 Home Screen
+
+Subject-based cards
+
+Modern Material 3 UI
+
+Available Subjects:
+
+App Development
+
+Web Development
+
+DSA
+
+AI / ML
+
+❓ Interview Questions
+
+Subject-wise MCQ questions
+
+One question at a time
+
+Answer validation
+
+Score tracking:
+
+Attempted questions
+
+Correct answers
+
+Result Summary Screen
+
+📝 Notes Section
+
+Subject-wise notes
+
+Clean & scrollable reading UI
+
+Firebase-compatible (dynamic notes support)
