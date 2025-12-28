@@ -59,3 +59,5 @@ Subject-wise notes
 Clean & scrollable reading UI
 
 Firebase-compatible (dynamic notes support)
+
+<!-- Daily progress update -->
