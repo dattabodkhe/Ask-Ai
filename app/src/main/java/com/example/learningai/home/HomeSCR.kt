@@ -11,51 +11,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.learningai.R
 import com.example.learningai.model.SubjectUI
 import com.example.learningai.nav.Routes
 
+
 @Composable
 fun HomeSCR(navController: NavController) {
 
     val subjects = listOf(
-        SubjectUI(
-            id = "app_dev",
-            title = "App Development",
-            subtitle = "Kotlin, Jetpack Compose, MVVM",
-            icon = R.drawable.outline_question_mark_24
-        ),
-        SubjectUI(
-            id = "web_dev",
-            title = "Web Development",
-            subtitle = "HTML, CSS, JavaScript, React",
-            icon = R.drawable.outline_question_mark_24
-        ),
-        SubjectUI(
-            id = "dsa",
-            title = "DSA",
-            subtitle = "Arrays, Linked List, Trees",
-            icon = R.drawable.outline_question_mark_24
-        ),
-        SubjectUI(
-            id = "ai_ml",
-            title = "AI / ML",
-            subtitle = "TensorFlow, PyTorch, Neural Nets",
-            icon = R.drawable.outline_question_mark_24
-        )
+        SubjectUI("app_dev", "App Development", "Kotlin • Compose • MVVM", R.drawable.outline_question_mark_24),
+        SubjectUI("web_dev", "Web Development", "HTML • CSS • React", R.drawable.outline_question_mark_24),
+        SubjectUI("dsa", "DSA", "Arrays • Trees • Graphs", R.drawable.outline_question_mark_24),
+        SubjectUI("ai_ml", "AI / ML", "Neural Nets • TensorFlow", R.drawable.outline_question_mark_24)
     )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(20.dp)
     ) {
 
+        // 👋 Header
         Text(
-            text = "👋 Hi Datta",
-            style = MaterialTheme.typography.titleLarge
+            text = "👋 Hi user",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
         )
 
         Text(
@@ -72,12 +56,9 @@ fun HomeSCR(navController: NavController) {
             items(subjects) { subject ->
                 SubjectCard(
                     subject = subject,
-
                     onInterviewClick = {
-                        // ✅ FIXED
                         navController.navigate("${Routes.INTERVIEW}/${subject.id}")
                     },
-
                     onNotesClick = {
                         navController.navigate("${Routes.NOTES}/${subject.id}")
                     }

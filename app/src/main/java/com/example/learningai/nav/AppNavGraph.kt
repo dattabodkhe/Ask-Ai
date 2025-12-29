@@ -1,8 +1,8 @@
 package com.example.learningai.nav
 
+import NotesSCR
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -10,33 +10,36 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.learningai.Admin.AdminDashboardScreen
-
 import com.example.learningai.home.*
 import com.example.learningai.user.*
-
-import com.example.learningai.Admin.AddQuestionScreen
-import com.example.learningai.ViewModel.InterviewViewModel
+import com.example.learningai.MVVM.InterviewViewModel
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     paddingValues: PaddingValues
 ) {
-
-    val interviewViewModel: InterviewViewModel = viewModel()
-
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
         modifier = Modifier.padding(paddingValues)
     ) {
 
+        // 🏠 HOME
         composable(Routes.HOME) {
             HomeSCR(navController)
         }
 
+        // 📝 NOTES (with subjectId)
+        composable("${Routes.NOTES}/{subjectId}") { backStack ->
+            val subjectId = backStack.arguments?.getString("subjectId") ?: ""
+            NotesSCR(subjectId = subjectId)
+        }
+
+        // 🎯 INTERVIEW
         composable("${Routes.INTERVIEW}/{subjectId}") { backStack ->
             val subjectId = backStack.arguments?.getString("subjectId") ?: ""
+            val interviewViewModel: InterviewViewModel = viewModel()
 
             InterviewScreen(
                 subjectId = subjectId,
@@ -47,8 +50,10 @@ fun AppNavGraph(
             )
         }
 
+        // 🏁 RESULT
         composable("${Routes.RESULT}/{subjectId}") { backStack ->
             val subjectId = backStack.arguments?.getString("subjectId") ?: ""
+            val interviewViewModel: InterviewViewModel = viewModel()
 
             ResultScreen(
                 subjectId = subjectId,
@@ -60,22 +65,19 @@ fun AppNavGraph(
             )
         }
 
-        composable(Routes.CHAT) { UserInputSCR() }
+        // 💬 CHAT
+        composable(Routes.CHAT) {
+            UserInputSCR()
+        }
 
+        // 👤 PROFILE
         composable(Routes.PROFILE) {
             UserProfileSCR(navController)
         }
 
+        // 🛠 ADMIN
         composable(Routes.ADMIN) {
             AdminDashboardScreen(navController)
-        }
-
-        composable("add_question") {
-            AddQuestionScreen()
-        }
-
-        composable("add_notes") {
-            Text("Add Notes Screen (Coming Soon)")
         }
     }
 }

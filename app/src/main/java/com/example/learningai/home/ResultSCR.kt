@@ -6,7 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.learningai.ViewModel.InterviewViewModel
+import com.example.learningai.MVVM.InterviewViewModel
 
 @Composable
 fun ResultScreen(
@@ -33,7 +33,7 @@ fun ResultScreen(
 
         Button(
             onClick = {
-                viewModel.saveResult(subjectId) // ✅ FIXED
+                viewModel.saveResult(subjectId)
                 viewModel.resetQuiz()
                 onFinish()
             },

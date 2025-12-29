@@ -1,4 +1,4 @@
-package com.example.learningai.ViewModel
+package com.example.learningai.MVVM
 
 sealed class AuthState {
     object Idle : AuthState()

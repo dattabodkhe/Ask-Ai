@@ -4,30 +4,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.example.learningai.ViewModel.AuthViewModel
-
-import com.example.learningai.ui.nav.BottomAppBar
+import com.example.learningai.MVVM.AuthViewModel
 import com.example.learningai.user.LoginScreen
+import com.example.learningai.ui.nav.BottomAppBar
 
 @Composable
-fun MainScreen() {
-
+fun MainScreen(
+    authViewModel: AuthViewModel
+) {
     val navController = rememberNavController()
-    val authViewModel: AuthViewModel = viewModel()
-
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
     if (!isLoggedIn) {
-
-        LoginScreen(
-            authViewModel = authViewModel,
-            onSuccess = {
-                // nothing here, state auto-update karega
-            }
-        )
-
+        LoginScreen(authViewModel)
     } else {
-
         Scaffold(
             bottomBar = {
                 BottomAppBar(
@@ -39,10 +29,10 @@ fun MainScreen() {
                     }
                 )
             }
-        ) { paddingValues ->
+        ) { padding ->
             AppNavGraph(
                 navController = navController,
-                paddingValues = paddingValues
+                paddingValues = padding
             )
         }
     }

@@ -1,5 +1,3 @@
-package com.example.learningai.home
-
 import android.widget.TextView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -9,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.learningai.viewmodel.NotesViewModel
+import com.example.learningai.MVVM.NotesViewModel
 import io.noties.markwon.Markwon
 
 @Composable
@@ -17,6 +15,7 @@ fun NotesSCR(
     subjectId: String,
     viewModel: NotesViewModel = viewModel()
 ) {
+
     val note by viewModel.note.collectAsState()
 
     LaunchedEffect(subjectId) {
@@ -39,6 +38,7 @@ fun NotesSCR(
             .padding(16.dp)
     ) {
 
+        // 🔹 Title
         Text(
             text = note!!.title,
             style = MaterialTheme.typography.titleLarge
@@ -46,14 +46,15 @@ fun NotesSCR(
 
         Spacer(Modifier.height(16.dp))
 
+        // 🔹 Markdown Content (CLEAR, NO BLUR)
         AndroidView(
-            modifier = Modifier.fillMaxWidth(),
             factory = { context ->
                 TextView(context).apply {
                     val markwon = Markwon.create(context)
                     markwon.setMarkdown(this, note!!.content)
                 }
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

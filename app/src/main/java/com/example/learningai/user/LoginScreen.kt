@@ -1,55 +1,66 @@
 package com.example.learningai.user
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.learningai.ViewModel.AuthState
-import com.example.learningai.ViewModel.AuthViewModel
+import com.example.learningai.MVVM.AuthState
+import com.example.learningai.MVVM.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    authViewModel: AuthViewModel,
-    onSuccess: () -> Unit
+    authViewModel: AuthViewModel
 ) {
-    val state by authViewModel.authState.collectAsState()
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    Column(Modifier.padding(16.dp)) {
+    val authState by authViewModel.authState.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+
+        Text("Login", style = MaterialTheme.typography.headlineMedium)
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") }
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") }
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Button(onClick = { authViewModel.login(email, password) }) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { authViewModel.login(email, password) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Login")
         }
 
-        when (state) {
-            is AuthState.Success -> onSuccess()
-            is AuthState.Error ->
-                Text((state as AuthState.Error).message, color = MaterialTheme.colorScheme.error)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when (authState) {
+            is AuthState.Loading -> CircularProgressIndicator()
+            is AuthState.Error -> Text(
+                text = (authState as AuthState.Error).message,
+                color = MaterialTheme.colorScheme.error
+            )
             else -> {}
         }
     }

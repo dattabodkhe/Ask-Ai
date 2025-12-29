@@ -1,7 +1,6 @@
-package com.example.learningai.ViewModel
+package com.example.learningai.MVVM
 
 import com.example.learningai.model.InterviewQuestion
-
 data class InterviewUiState(
     val questions: List<InterviewQuestion> = emptyList(),
     val currentIndex: Int = 0,
