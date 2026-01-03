@@ -1,30 +1,32 @@
 LearningAI – Multi-Subject Learning App (Android)
 
-LearningAI ek modern Android learning application hai jo students aur beginners ko multiple tech subjects me strong banane ke liye design kiya gaya hai.
-App Jetpack Compose, MVVM architecture, aur StateFlow use karta hai — scalable aur future AI-ready structure ke sath.
+LearningAI is a modern Android learning application designed to help students and beginners build strong fundamentals across multiple technology domains.
+The app follows industry-standard Android architecture using Jetpack Compose, MVVM, and StateFlow, making it scalable, maintainable, and future-ready for AI integration.
 
 ✨ Key Highlights
 
-📱 100% Jetpack Compose UI
+📱 100% Jetpack Compose UI (Modern, declarative UI)
 
-🧠 Clean MVVM Architecture
+🧠 Clean MVVM Architecture for better separation of concerns
 
-🔄 Single Source of Truth (StateFlow)
+🔄 Single Source of Truth using StateFlow
 
-🎯 Interview-focused MCQs
+🎯 Interview-focused MCQ practice
 
-📚 Subject-wise Notes
+📚 Subject-wise structured notes
 
-☁ Firebase-ready (dynamic data support)
+☁ Firebase-ready architecture for dynamic content
 
-🤖 Future AI Chat integration ready
+🤖 Future-ready AI Chat integration support
 
-🚀 Features
+🚀 Core Features
 🏠 Home Screen
 
-Subject-based cards
+Subject-based interactive cards
 
-Modern Material 3 UI
+Modern Material 3 design
+
+Smooth and responsive UI
 
 Available Subjects:
 
@@ -32,32 +34,48 @@ App Development
 
 Web Development
 
-DSA
+Data Structures & Algorithms (DSA)
 
-AI / ML
+Artificial Intelligence / Machine Learning (AI/ML)
 
-❓ Interview Questions
+❓ Interview Questions Module
 
 Subject-wise MCQ questions
 
-One question at a time
+One question displayed at a time
 
-Answer validation
+Real-time answer validation
 
-Score tracking:
+Score tracking including:
 
-Attempted questions
+Total attempted questions
 
-Correct answers
+Correct answers count
 
-Result Summary Screen
+Dedicated Result Summary Screen
 
 📝 Notes Section
 
-Subject-wise notes
+Subject-wise learning notes
 
-Clean & scrollable reading UI
+Clean, readable, scrollable UI
 
-Firebase-compatible (dynamic notes support)
+Designed for Firebase integration (dynamic notes support)
 
-<!-- Daily progress update -->
+🛠 Tech Stack
+
+Kotlin
+
+Jetpack Compose
+
+MVVM Architecture
+
+StateFlow
+
+Material 3
+
+Firebase (planned integration)
+
+🎯 Project Goal
+
+To provide a single, structured learning platform for beginners and interview preparation, while following real-world Android development best practices and keeping the architecture scalable for future AI-powered features.
