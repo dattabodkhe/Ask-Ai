@@ -19,39 +19,46 @@ import androidx.compose.ui.unit.dp
 import com.example.learningai.nav.BottomNavItem
 import com.example.learningai.nav.Routes
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+
 @Composable
 fun BottomAppBar(
     currentRoute: String?,
     onItemClick: (String) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .background(Color.Black),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        tonalElevation = 6.dp,
+        color = MaterialTheme.colorScheme.surface
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 
-        BottomNavItem(
-            icon = Icons.Default.Home,
-            label = "Home",
-            selected = currentRoute == Routes.HOME,
-            onClick = { onItemClick(Routes.HOME) }
-        )
+            BottomNavItem(
+                icon = Icons.Default.Home,
+                label = "Home",
+                selected = currentRoute == Routes.HOME,
+                onClick = { onItemClick(Routes.HOME) }
+            )
 
-        BottomNavItem(
-            icon = Icons.Default.Email,
-            label = "Chat",
-            selected = currentRoute == Routes.CHAT,
-            onClick = { onItemClick(Routes.CHAT) }
-        )
+            BottomNavItem(
+                icon = Icons.Default.Email,
+                label = "Chat",
+                selected = currentRoute == Routes.CHAT,
+                onClick = { onItemClick(Routes.CHAT) }
+            )
 
-        BottomNavItem(
-            icon = Icons.Default.Person,
-            label = "Profile",
-            selected = currentRoute == Routes.PROFILE,
-            onClick = { onItemClick(Routes.PROFILE) }
-        )
+            BottomNavItem(
+                icon = Icons.Default.Person,
+                label = "Profile",
+                selected = currentRoute == Routes.PROFILE,
+                onClick = { onItemClick(Routes.PROFILE) }
+            )
+        }
     }
 }

@@ -1,26 +1,30 @@
-package com.example.learningai.Repository
+package com.example.learningai.repository
 
+import com.example.learningai.localDB.NotesDao
+import com.example.learningai.localDB.toEntity
+import com.example.learningai.localDB.toModel
 import com.example.learningai.model.Note
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 
-class NotesRepository {
+class NotesRepository(
+    private val dao: NotesDao
+) {
 
-    private val db = FirebaseFirestore.getInstance()
-    private val notesRef = db.collection("notes")
+    private val firestore = FirebaseFirestore.getInstance()
+    private val notesRef = firestore.collection("notes")
 
-    fun getNoteBySubject(subjectId: String): Flow<Note?> = callbackFlow {
-        val listener = notesRef.document(subjectId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                trySend(snapshot?.toObject(Note::class.java))
-            }
+    fun getNote(subjectId: String): Flow<Note?> {
+        return dao.getNote(subjectId).map { it?.toModel() }
+    }
 
-        awaitClose { listener.remove() }
+    suspend fun syncNote(subjectId: String) {
+        val snap = notesRef.document(subjectId).get().await()
+        snap.toObject(Note::class.java)?.let {
+            dao.insert(it.toEntity())
+        }
+
     }
 }

@@ -11,8 +11,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.learningai.Admin.AdminViewModel
-import com.example.learningai.nav.Routes
 import com.example.learningai.MVVM.InterviewViewModel
+import com.example.learningai.nav.Routes
 
 @Composable
 fun UserProfileSCR(
@@ -29,11 +29,16 @@ fun UserProfileSCR(
         adminViewModel.checkAdmin()
     }
 
-    Column(Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp)
+    ) {
+
 
         Text(
-            text = "Profile",
-            fontSize = 22.sp,
+            text = "Your Profile",
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.clickable {
                 tapCount++
@@ -44,24 +49,62 @@ fun UserProfileSCR(
             }
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-        Text("Attempted: ${uiState.attemptedCount}")
-        Text("Correct: ${uiState.correctCount}")
+        Text(
+            text = "Track your learning progress",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+
+        StatCard(
+            title = "Questions Attempted",
+            value = uiState.attemptedCount
+        )
+
+        StatCard(
+            title = "Correct Answers",
+            value = uiState.correctCount
+        )
+
+        val accuracy =
+            if (uiState.attemptedCount == 0) 0
+            else (uiState.correctCount * 100 / uiState.attemptedCount)
+
+        StatCard(
+            title = "Accuracy",
+            value = "$accuracy%"
+        )
     }
 }
-
 @Composable
-fun StatCard(title: String, value: Any) {
+fun StatCard(
+    title: String,
+    value: Any
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(title)
-            Text(value.toString(), fontWeight = FontWeight.Bold)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = value.toString(),
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

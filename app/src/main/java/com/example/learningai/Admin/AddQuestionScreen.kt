@@ -6,10 +6,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 
 @Composable
 fun AddQuestionScreen(
-    viewModel: AdminViewModel = viewModel()
+    navController: NavController,viewModel: AdminViewModel = viewModel()
 ) {
     var subjectId by remember { mutableStateOf("") }
     var question by remember { mutableStateOf("") }

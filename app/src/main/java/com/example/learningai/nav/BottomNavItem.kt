@@ -12,6 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun BottomNavItem(
@@ -20,18 +24,27 @@ fun BottomNavItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val color =
+        if (selected)
+            MaterialTheme.colorScheme.primary
+        else
+            MaterialTheme.colorScheme.onSurfaceVariant
+
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (selected) Color.Cyan else Color.White
+            tint = color
         )
         Text(
             text = label,
-            color = if (selected) Color.Cyan else Color.White
+            color = color,
+            style = MaterialTheme.typography.labelSmall
         )
     }
 }

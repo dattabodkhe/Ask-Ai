@@ -54,7 +54,7 @@ fun EditQuestionScreen(
                     updatedQuestion = InterviewQuestion(
                         subjectId = "web_dev",
                         question = question,
-                        option = options,
+                        options = options,
                         correctIndex = correctIndex
                     )
                 )

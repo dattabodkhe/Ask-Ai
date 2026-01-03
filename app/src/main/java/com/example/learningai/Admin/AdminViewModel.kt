@@ -34,7 +34,7 @@ class AdminViewModel : ViewModel() {
                 "doc1" to InterviewQuestion(
                     subjectId = "web_dev",
                     question = "What is HTML?",
-                    option = listOf("Lang", "Protocol", "DB", "OS"),
+                    options = listOf("Lang", "Protocol", "DB", "OS"),
                     correctIndex = 0
                 )
             )

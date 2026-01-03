@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.learningai.Admin.AddQuestionScreen
 import com.example.learningai.Admin.AdminDashboardScreen
 import com.example.learningai.home.*
 import com.example.learningai.user.*
@@ -25,59 +26,54 @@ fun AppNavGraph(
         modifier = Modifier.padding(paddingValues)
     ) {
 
-        // 🏠 HOME
+        //  HOME
         composable(Routes.HOME) {
             HomeSCR(navController)
         }
 
-        // 📝 NOTES (with subjectId)
+        //  NOTES
         composable("${Routes.NOTES}/{subjectId}") { backStack ->
             val subjectId = backStack.arguments?.getString("subjectId") ?: ""
-            NotesSCR(subjectId = subjectId)
+            NotesSCR(subjectId)
         }
 
-        // 🎯 INTERVIEW
+        //  QUESTIONS / INTERVIEW
         composable("${Routes.INTERVIEW}/{subjectId}") { backStack ->
             val subjectId = backStack.arguments?.getString("subjectId") ?: ""
-            val interviewViewModel: InterviewViewModel = viewModel()
+            val vm: InterviewViewModel = viewModel()
 
             InterviewScreen(
                 subjectId = subjectId,
-                viewModel = interviewViewModel,
+                viewModel = vm,
                 onFinish = {
                     navController.navigate("${Routes.RESULT}/$subjectId")
                 }
             )
         }
 
-        // 🏁 RESULT
+        //  RESULT
         composable("${Routes.RESULT}/{subjectId}") { backStack ->
             val subjectId = backStack.arguments?.getString("subjectId") ?: ""
-            val interviewViewModel: InterviewViewModel = viewModel()
+            val vm: InterviewViewModel = viewModel()
 
             ResultScreen(
                 subjectId = subjectId,
-                viewModel = interviewViewModel,
+                viewModel = vm,
                 onFinish = {
-                    interviewViewModel.resetQuiz()
+                    vm.resetQuiz()
                     navController.popBackStack(Routes.HOME, false)
                 }
             )
         }
 
-        // 💬 CHAT
+        //  CHAT
         composable(Routes.CHAT) {
             UserInputSCR()
         }
 
-        // 👤 PROFILE
+        //  PROFILE
         composable(Routes.PROFILE) {
             UserProfileSCR(navController)
-        }
-
-        // 🛠 ADMIN
-        composable(Routes.ADMIN) {
-            AdminDashboardScreen(navController)
         }
     }
 }

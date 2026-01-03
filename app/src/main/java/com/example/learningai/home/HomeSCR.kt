@@ -23,46 +23,70 @@ import com.example.learningai.nav.Routes
 fun HomeSCR(navController: NavController) {
 
     val subjects = listOf(
-        SubjectUI("app_dev", "App Development", "Kotlin • Compose • MVVM", R.drawable.outline_question_mark_24),
-        SubjectUI("web_dev", "Web Development", "HTML • CSS • React", R.drawable.outline_question_mark_24),
-        SubjectUI("dsa", "DSA", "Arrays • Trees • Graphs", R.drawable.outline_question_mark_24),
-        SubjectUI("ai_ml", "AI / ML", "Neural Nets • TensorFlow", R.drawable.outline_question_mark_24)
+        SubjectUI("app_dev", "App Development", "Kotlin • Compose", R.drawable.outline_question_mark_24),
+        SubjectUI("web_dev", "Web Development", "HTML • React", R.drawable.outline_question_mark_24),
+        SubjectUI("dsa", "DSA", "Arrays • Trees", R.drawable.outline_question_mark_24)
     )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp)
-    ) {
-
-        // 👋 Header
-        Text(
-            text = "👋 Hi user",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = "What do you want to learn today?",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+    MainScaffold(
+        title = "Learning AI",
+        navController = navController
+    ) { padding ->
 
         LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(subjects) { subject ->
-                SubjectCard(
-                    subject = subject,
-                    onInterviewClick = {
-                        navController.navigate("${Routes.INTERVIEW}/${subject.id}")
-                    },
-                    onNotesClick = {
-                        navController.navigate("${Routes.NOTES}/${subject.id}")
-                    }
+
+            item {
+                Text(
+                    "Hi Datta 👋",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
                 )
+                Text(
+                    "Choose what you want to learn",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            items(subjects) { subject ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+
+                        Text(subject.title, fontWeight = FontWeight.Bold)
+                        Text(subject.subtitle, style = MaterialTheme.typography.bodySmall)
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    navController.navigate("${Routes.INTERVIEW}/${subject.id}")
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Interview")
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    navController.navigate("${Routes.NOTES}/${subject.id}")
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Notes")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
