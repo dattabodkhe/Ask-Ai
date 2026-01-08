@@ -1,6 +1,5 @@
 package com.example.learningai.nav
 
-import NotesSCR
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -9,69 +8,77 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.learningai.Admin.AddQuestionScreen
-import com.example.learningai.Admin.AdminDashboardScreen
-import com.example.learningai.home.*
-import com.example.learningai.user.*
-import com.example.learningai.MVVM.InterviewViewModel
+import com.example.learningai.MVVM.AddQuestionsViewModel
+import com.example.learningai.classroom.AddQuestionsScreen
+import com.example.learningai.classroom.CreateClassroomScreen
+import com.example.learningai.home.ChatHomeScreen
+import com.example.learningai.quiz.ResultScreen
+import com.example.learningai.user.UserInputSCR
+import com.example.learningai.user.UserProfileSCR
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     paddingValues: PaddingValues
 ) {
+
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
         modifier = Modifier.padding(paddingValues)
     ) {
 
-        //  HOME
         composable(Routes.HOME) {
-            HomeSCR(navController)
+            ChatHomeScreen(navController)
         }
 
-        //  NOTES
-        composable("${Routes.NOTES}/{subjectId}") { backStack ->
-            val subjectId = backStack.arguments?.getString("subjectId") ?: ""
-            NotesSCR(subjectId)
+        composable(Routes.CREATE_CLASSROOM) {
+            CreateClassroomScreen(navController)
         }
 
-        //  QUESTIONS / INTERVIEW
-        composable("${Routes.INTERVIEW}/{subjectId}") { backStack ->
-            val subjectId = backStack.arguments?.getString("subjectId") ?: ""
-            val vm: InterviewViewModel = viewModel()
+        composable(
+            route = "${Routes.ADD_QUESTIONS}/{subject}/{count}"
+        ) { backStack ->
 
-            InterviewScreen(
-                subjectId = subjectId,
-                viewModel = vm,
-                onFinish = {
-                    navController.navigate("${Routes.RESULT}/$subjectId")
-                }
+            val subject =
+                backStack.arguments?.getString("subject") ?: ""
+            val count =
+                backStack.arguments?.getString("count")?.toInt() ?: 5
+
+            val vm: AddQuestionsViewModel = viewModel()
+
+            AddQuestionsScreen(
+                navController = navController,
+                subject = subject,
+                totalQuestions = count,
+                viewModel = vm
             )
         }
 
-        //  RESULT
-        composable("${Routes.RESULT}/{subjectId}") { backStack ->
-            val subjectId = backStack.arguments?.getString("subjectId") ?: ""
-            val vm: InterviewViewModel = viewModel()
+        composable(
+            route = "${Routes.RESULT}/{classroomId}/{score}/{total}"
+        ) { backStack ->
+
+            val classroomId =
+                backStack.arguments?.getString("classroomId") ?: ""
+            val score =
+                backStack.arguments?.getString("score")?.toInt() ?: 0
+            val total =
+                backStack.arguments?.getString("total")?.toInt() ?: 0
 
             ResultScreen(
-                subjectId = subjectId,
-                viewModel = vm,
-                onFinish = {
-                    vm.resetQuiz()
-                    navController.popBackStack(Routes.HOME, false)
-                }
+                classroomId = classroomId,
+                score = score,
+                totalQuestions = total,
+                userId = "demo_user", // 🔜 Firebase Auth se aayega
+                navController = navController
             )
         }
 
-        //  CHAT
         composable(Routes.CHAT) {
-            UserInputSCR()
+            UserInputSCR(navController)
         }
 
-        //  PROFILE
         composable(Routes.PROFILE) {
             UserProfileSCR(navController)
         }

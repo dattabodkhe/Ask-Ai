@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.google.services)
-    id("com.google.dagger.hilt.android")
 }
 android {
     namespace = "com.example.learningai"
@@ -15,6 +14,17 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        resValue(
+            "string",
+            "gemini_api_key",
+            project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
+        )
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
     }
 
     buildTypes {
@@ -23,10 +33,6 @@ android {
         }
     }
 
-    // ✅ YAHI PE ADD KARNA HAI
-    buildFeatures {
-        compose = true
-    }
 
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
@@ -41,7 +47,6 @@ android {
         jvmTarget = "11"
     }
 }
-
 dependencies {
 
     /* -------------------- CORE -------------------- */
@@ -55,6 +60,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation(libs.generativeai)
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     /* -------------------- NAVIGATION -------------------- */
@@ -71,12 +77,6 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
-    /* -------------------- HILT -------------------- */
-    implementation("com.google.dagger:hilt-android:2.51")
-    kapt("com.google.dagger:hilt-compiler:2.51")
-
-    /* -------------------- HILT + COMPOSE -------------------- */
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     /* -------------------- OTHERS -------------------- */
     implementation("io.noties.markwon:core:4.6.2")
@@ -90,5 +90,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    /*---------gemini api----*/
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
 }
