@@ -1,5 +1,6 @@
 package com.example.learningai.mvvm
 
+import android.app.Application
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -15,7 +16,7 @@ class AddQuestionsViewModelFactory(
         val db = AppDatabase.getDatabase(context)
         return AddQuestionsViewModel(
             AiRepository(context),
-            db.questionDao()
+            db.questionDao() as Application
         ) as T
     }
 }

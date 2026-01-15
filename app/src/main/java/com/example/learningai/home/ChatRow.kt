@@ -4,9 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,73 +18,84 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.learningai.model.ChatItem
+import com.example.learningai.model.ChatModel
+import com.example.learningai.ui.theme.CardDark
+import com.example.learningai.ui.theme.Purple
 
 @Composable
 fun ChatRow(
-    chat: ChatItem,
+    chat: ChatModel,
     onClick: () -> Unit,
     onShareClick: () -> Unit
 ) {
-    Column {
-        Row(
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = CardDark.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(18.dp)
+            )
+            .clickable { onClick() }
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        // 🔵 Avatar
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Purple),
+            contentAlignment = Alignment.Center
         ) {
+            Text(
+                text = chat.name.first().uppercase(),
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-            // 🔵 Profile circle
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = chat.name.first().toString(),
-                    fontWeight = FontWeight.Bold
-                )
-            }
+        Spacer(modifier = Modifier.width(12.dp))
 
-            Spacer(modifier = Modifier.width(12.dp))
+        // 📄 Name + last message
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = chat.name,
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            )
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = chat.name,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = chat.lastMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    maxLines = 1
-                )
-            }
+            Spacer(modifier = Modifier.height(2.dp))
 
             Text(
-                text = chat.time,
+                text = chat.lastMessage,
+                color = Color.LightGray,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                modifier = Modifier.padding(end = 8.dp)
+                maxLines = 1
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // 🕒 Time + Share
+        Column(
+            horizontalAlignment = Alignment.End
+        ) {
+            Text(
+                text = chat.time,
+                color = Color.LightGray,
+                style = MaterialTheme.typography.bodySmall
             )
 
             IconButton(onClick = onShareClick) {
                 Icon(
                     Icons.Default.Share,
-                    contentDescription = "Share Classroom"
+                    contentDescription = "Share",
+                    tint = Color.White
                 )
             }
         }
-
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 76.dp),
-            thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
-        )
     }
 }

@@ -1,10 +1,14 @@
 package com.example.learningai.nav
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -12,28 +16,38 @@ import androidx.navigation.NavController
 fun AppTopBar(
     title: String,
     navController: NavController,
-    showBack: Boolean = true
+    showBack: Boolean,
+    currentRoute: String?
 ) {
     TopAppBar(
         title = {
-            Text(
-                text = title,
-                color = Color.White
-            )
+            Text(title)
         },
         navigationIcon = {
             if (showBack) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Back"
                     )
                 }
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Black
-        )
+        actions = {
+            if (currentRoute == Routes.HOME) {
+                TextButton(
+                    onClick = {
+                        navController.navigate(Routes.CREATE_CLASSROOM)
+                    }
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Create")
+                }
+            }
+        }
     )
 }

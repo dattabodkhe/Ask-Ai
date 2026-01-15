@@ -3,6 +3,7 @@ package com.example.learningai.MVVM
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.learningai.ai.AiRepository
 import com.example.learningai.localDB.AppDatabase
 import com.example.learningai.localDB.QuestionEntity
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ data class AddQuestionsUiState(
 )
 
 class AddQuestionsViewModel(
+    application1: AiRepository,
     application: Application
 ) : AndroidViewModel(application) {
 

@@ -6,7 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.learningai.mvvm.AddQuestionsViewModel
+import com.example.learningai.MVVM.AddQuestionsViewModel
 
 @Composable
 fun AddQuestionsScreen(

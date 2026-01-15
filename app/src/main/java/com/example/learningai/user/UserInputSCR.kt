@@ -5,103 +5,98 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.learningai.model.ChatMessage
+import com.example.learningai.ui.theme.*
+import kotlinx.coroutines.delay
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserInputSCR(navController: NavHostController) {
 
     var userText by remember { mutableStateOf("") }
-    var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
+
+    val messages = remember {
+        mutableStateListOf(
+            ChatMessage("Hi 👋 Ask me anything!", false)
+        )
+    }
+
     val listState = rememberLazyListState()
 
     fun sendMessage() {
         if (userText.isNotBlank()) {
-            messages = messages + ChatMessage(userText, true)
-            messages = messages + ChatMessage("AI reply yahan aayega", false)
+            messages.add(0, ChatMessage(userText, true))
             userText = ""
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(appGradient)
     ) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
-        /* ---------- HEADER ---------- */
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = "AskAI",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-        }
-
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-
-        /* ---------- CHAT LIST ---------- */
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(messages) { msg ->
-                if (msg.isUser) {
-                    UserMessageCard(message = msg.text)
-                } else {
-                    AiMessageCard(message = msg.text)
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                state = listState,
+                reverseLayout = true,
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(messages) { msg ->
+                    ChatBubble(
+                        text = msg.text,
+                        isUser = msg.isUser
+                    )
                 }
             }
-        }
 
-        /* ---------- INPUT BAR ---------- */
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()      // ✅ ONLY IME handling
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            TextField(
-                value = userText,
-                onValueChange = { userText = it },
-                placeholder = { Text("Ask your question") },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(onSend = { sendMessage() })
+            ChatInputBar(
+                text = userText,
+                onTextChange = { userText = it },
+                onSend = { sendMessage() }
             )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Button(onClick = { sendMessage() }) {
-                Text("Send")
-            }
         }
     }
-
-    /* ---------- AUTO SCROLL ---------- */
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.lastIndex)
+}
+@Composable
+fun ChatBubble(
+    text: String,
+    isUser: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement =
+            if (isUser) Arrangement.End else Arrangement.Start
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = if (isUser)
+                        Brush.horizontalGradient(listOf(Purple, NeonBlue))
+                    else
+                        Brush.verticalGradient(listOf(CardDark, DarkBlue)),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(12.dp)
+                .widthIn(max = 280.dp)
+        ) {
+            Text(text = text, color = Color.White)
         }
     }
 }

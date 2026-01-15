@@ -14,7 +14,6 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
 
-    // 🔥 CURRENT ROUTE TRACK
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -22,29 +21,35 @@ fun MainScreen(
 
     if (!isLoggedIn) {
 
-        // 🔐 LOGIN
-        LoginScreen(authViewModel)
+        LoginScreen(navController)
 
     } else {
+
+        val hideBottomBarRoutes = listOf(
+            Routes.CHAT
+        )
 
         Scaffold(
             topBar = {
                 AppTopBar(
                     title = getTitleForRoute(currentRoute),
                     navController = navController,
-                    showBack = currentRoute != Routes.HOME
+                    showBack = currentRoute != Routes.HOME,
+                    currentRoute = currentRoute
                 )
             },
             bottomBar = {
-                BottomAppBar(
-                    currentRoute = currentRoute,
-                    onItemClick = { route ->
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
+                if (currentRoute !in hideBottomBarRoutes) {
+                    BottomAppBar(
+                        currentRoute = currentRoute,
+                        onItemClick = { route ->
+                            navController.navigate(route) {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { padding ->
             AppNavGraph(

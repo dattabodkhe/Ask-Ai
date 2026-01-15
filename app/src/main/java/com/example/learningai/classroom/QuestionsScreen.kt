@@ -2,58 +2,75 @@ package com.example.learningai.classroom
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.learningai.MVVM.QuestionsViewModel
+import com.example.learningai.localDB.AppDatabase
 import com.example.learningai.localDB.QuestionDao
+import com.example.learningai.localDB.QuestionEntity
+import com.example.learningai.repository.QuestionRepository
+
 
 @Composable
 fun QuestionsScreen(
     classroomId: String,
-    questionDao: QuestionDao
+    navController: NavController
 ) {
-    val questions by questionDao
-        .getQuestions(classroomId)
-        .collectAsState(initial = emptyList())
+    val context = LocalContext.current
+    val dao = AppDatabase.getDatabase(context).questionDao()
+    val viewModel: QuestionsViewModel = remember {
+        QuestionsViewModel(
+            QuestionRepository(dao)
+        )
+    }
 
-    var index by remember { mutableStateOf(0) }
-    var selected by remember { mutableStateOf(-1) }
-    var score by remember { mutableStateOf(0) }
+    val state by viewModel.uiState.collectAsState()
 
-    if (questions.isEmpty()) {
+    LaunchedEffect(Unit) {
+        viewModel.loadQuestions(classroomId)
+    }
+
+    if (state.isLoading) {
         Text("Loading questions...")
         return
     }
 
-    val q = questions[index]
+    val q = state.questions[state.index]
 
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(Modifier.padding(16.dp)) {
 
-        Text("Q${index + 1}: ${q.question}")
+        Text("Q${state.index + 1}: ${q.question}")
 
-        val options = listOf(
-            q.optionA, q.optionB, q.optionC, q.optionD
-        )
+        listOf(
+            q.optionA,
+            q.optionB,
+            q.optionC,
+            q.optionD
+        ).forEachIndexed { i, text ->
 
-        options.forEachIndexed { i, text ->
             Button(
-                onClick = { selected = i },
+                onClick = { viewModel.selectOption(i) },
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    if (selected == i) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.secondary
+                    if (state.selected == i)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.secondary
                 )
             ) {
                 Text(text)
@@ -61,18 +78,12 @@ fun QuestionsScreen(
         }
 
         Button(
-            onClick = {
-                if (selected == q.correctIndex) score++
-
-                if (index < questions.lastIndex) {
-                    index++
-                    selected = -1
-                }
-            }
+            onClick = { viewModel.nextQuestion() },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Next")
         }
 
-        Text("Score: $score")
+        Text("Score: ${state.score}")
     }
 }
