@@ -7,5 +7,6 @@ data class QuestionsUiState(
     val index: Int = 0,
     val selected: Int = -1,
     val score: Int = 0,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val showResult : Boolean = false
 )

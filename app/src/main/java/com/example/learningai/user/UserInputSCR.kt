@@ -6,27 +6,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.learningai.model.ChatMessage
 import com.example.learningai.ui.theme.*
-import kotlinx.coroutines.delay
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserInputSCR(navController: NavHostController) {
-
+fun UserInputSCR(
+    navController: NavHostController
+) {
     var userText by remember { mutableStateOf("") }
 
     val messages = remember {
@@ -35,8 +27,6 @@ fun UserInputSCR(navController: NavHostController) {
         )
     }
 
-    val listState = rememberLazyListState()
-
     fun sendMessage() {
         if (userText.isNotBlank()) {
             messages.add(0, ChatMessage(userText, true))
@@ -44,28 +34,31 @@ fun UserInputSCR(navController: NavHostController) {
         }
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(appGradient)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                state = listState,
-                reverseLayout = true,
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(messages) { msg ->
-                    ChatBubble(
-                        text = msg.text,
-                        isUser = msg.isUser
-                    )
-                }
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            reverseLayout = true,
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(messages) { msg ->
+                ChatBubble(
+                    text = msg.text,
+                    isUser = msg.isUser
+                )
             }
+        }
 
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.ime.only(WindowInsetsSides.Bottom))
+        ) {
             ChatInputBar(
                 text = userText,
                 onTextChange = { userText = it },

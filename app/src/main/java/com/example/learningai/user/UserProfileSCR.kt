@@ -28,8 +28,9 @@ import com.example.learningai.ui.theme.*
 
 
 @Composable
-fun UserProfileSCR( onLogout: () -> Boolean,
-                   navController: NavController) {
+fun UserProfileSCR( onLogout: () -> Unit,
+                   navController: NavController,
+                    ) {
 
     Column(
         modifier = Modifier

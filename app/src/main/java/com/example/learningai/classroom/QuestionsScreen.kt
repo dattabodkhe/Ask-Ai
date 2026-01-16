@@ -1,38 +1,27 @@
 package com.example.learningai.classroom
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.learningai.MVVM.QuestionsViewModel
+import com.example.learningai.home.OptionItem
 import com.example.learningai.localDB.AppDatabase
-import com.example.learningai.localDB.QuestionDao
-import com.example.learningai.localDB.QuestionEntity
+import com.example.learningai.nav.Routes
 import com.example.learningai.repository.QuestionRepository
-
 
 @Composable
 fun QuestionsScreen(
-    classroomId: String,
-    navController: NavController
+    navController: NavController,
+    classroomId: String
 ) {
     val context = LocalContext.current
     val dao = AppDatabase.getDatabase(context).questionDao()
+
     val viewModel: QuestionsViewModel = remember {
         QuestionsViewModel(
             QuestionRepository(dao)
@@ -41,49 +30,82 @@ fun QuestionsScreen(
 
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(classroomId) {
         viewModel.loadQuestions(classroomId)
     }
 
     if (state.isLoading) {
-        Text("Loading questions...")
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
         return
     }
 
-    val q = state.questions[state.index]
+    val question = state.questions[state.index]
 
-    Column(Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
 
-        Text("Q${state.index + 1}: ${q.question}")
+        Text(
+            text = "Question ${state.index + 1} / ${state.questions.size}",
+            style = MaterialTheme.typography.titleMedium
+        )
 
-        listOf(
-            q.optionA,
-            q.optionB,
-            q.optionC,
-            q.optionD
-        ).forEachIndexed { i, text ->
+        Spacer(Modifier.height(12.dp))
 
-            Button(
-                onClick = { viewModel.selectOption(i) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    if (state.selected == i)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text(text)
-            }
+        Text(
+            text = question.question,
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        val options = listOf(
+            question.optionA,
+            question.optionB,
+            question.optionC,
+            question.optionD
+        )
+
+        options.forEachIndexed { index, option ->
+            OptionItem(
+                text = option,
+                isSelected = state.selected == index,
+                isCorrect =
+                    if (state.showResult)
+                        index == question.correctIndex
+                    else null,
+                onClick = { viewModel.selectOption(index) }
+            )
         }
+
+        Spacer(Modifier.weight(1f))
 
         Button(
-            onClick = { viewModel.nextQuestion() },
+            onClick = {
+                if (state.index < state.questions.lastIndex) {
+                    viewModel.nextQuestion()
+                } else {
+                    navController.navigate(
+                        "${Routes.RESULT}/$classroomId/${state.score}/${state.questions.size}"
+                    )
+                }
+            },
+            enabled = state.showResult,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Next")
+            Text(
+                if (state.index == state.questions.lastIndex)
+                    "Finish Test"
+                else
+                    "Next Question"
+            )
         }
-
-        Text("Score: ${state.score}")
     }
 }

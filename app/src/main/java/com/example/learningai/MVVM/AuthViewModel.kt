@@ -26,7 +26,8 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Success
             }
             .addOnFailureListener {
-                _authState.value = AuthState.Error(it.message ?: "Login failed")
+                _authState.value =
+                    AuthState.Error(it.message ?: "Login failed")
             }
     }
 

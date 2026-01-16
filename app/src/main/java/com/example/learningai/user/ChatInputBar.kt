@@ -21,14 +21,14 @@ import com.example.learningai.ui.theme.NeonBlue
 fun ChatInputBar(
     text: String,
     onTextChange: (String) -> Unit,
-    onSend: () -> Unit
+    onSend: () -> Unit,
+    modifier: Modifier = Modifier   // ✅ OPTIONAL
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(CardDark)
-            .padding(8.dp)
-            .imePadding(), // ✅ ONLY HERE
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
@@ -53,7 +53,7 @@ fun ChatInputBar(
         )
 
         IconButton(onClick = onSend) {
-            Icon(Icons.Default.Send, null, tint = NeonBlue)
+            Icon(Icons.Default.Send, contentDescription = "Send", tint = NeonBlue)
         }
     }
 }

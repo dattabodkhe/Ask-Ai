@@ -29,25 +29,36 @@ class QuestionsViewModel(
         }
     }
 
-    fun selectOption(index: Int) {
-        _uiState.update { it.copy(selected = index) }
+
+    fun selectOption(optionIndex: Int) {
+        val state = _uiState.value
+        if (state.showResult) return   // already answered
+
+        val correctIndex =
+            state.questions[state.index].correctIndex
+
+        _uiState.update {
+            it.copy(
+                selected = optionIndex,
+                score = if (optionIndex == correctIndex)
+                    it.score + 1
+                else
+                    it.score,
+                showResult = true
+            )
+        }
     }
+
 
     fun nextQuestion() {
         val state = _uiState.value
-        val q = state.questions[state.index]
-
-        val newScore =
-            if (state.selected == q.correctIndex)
-                state.score + 1
-            else state.score
 
         if (state.index < state.questions.lastIndex) {
             _uiState.update {
                 it.copy(
                     index = it.index + 1,
                     selected = -1,
-                    score = newScore
+                    showResult = false   // 🔥 reset for next question
                 )
             }
         }

@@ -1,8 +1,9 @@
 package com.example.learningai.nav
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.example.learningai.MVVM.AuthViewModel
 import com.example.learningai.user.LoginScreen
@@ -13,48 +14,43 @@ fun MainScreen(
     authViewModel: AuthViewModel
 ) {
     val navController = rememberNavController()
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
     if (!isLoggedIn) {
 
-        LoginScreen(navController)
+        // ✅ LOGIN SCREEN
+        LoginScreen(
+            navController = navController,
+            authViewModel = authViewModel
+        )
 
     } else {
 
-        val hideBottomBarRoutes = listOf(
-            Routes.CHAT
-        )
-
         Scaffold(
+            modifier = Modifier.fillMaxSize(),
             topBar = {
                 AppTopBar(
-                    title = getTitleForRoute(currentRoute),
+                    title = "Learning AI",
                     navController = navController,
-                    showBack = currentRoute != Routes.HOME,
-                    currentRoute = currentRoute
+                    showBack = false,
+                    currentRoute = null
                 )
             },
             bottomBar = {
-                if (currentRoute !in hideBottomBarRoutes) {
-                    BottomAppBar(
-                        currentRoute = currentRoute,
-                        onItemClick = { route ->
-                            navController.navigate(route) {
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                BottomAppBar(
+                    currentRoute = null,
+                    onItemClick = { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
                         }
-                    )
-                }
+                    }
+                )
             }
-        ) { padding ->
+        ) { paddingValues ->
+
             AppNavGraph(
                 navController = navController,
-                paddingValues = padding
+                paddingValues = paddingValues
             )
         }
     }
