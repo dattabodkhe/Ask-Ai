@@ -150,7 +150,7 @@ fun CreateClassroomScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Generate with AI 🤖")
+                    Text("Generate Question")
                 }
             }
         }

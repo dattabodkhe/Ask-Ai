@@ -8,10 +8,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.learningai.classroom.CreateClassroomScreen
+import com.example.learningai.classroom.QuestionsScreen
 import com.example.learningai.home.ChatHomeScreen
 import com.example.learningai.home.ResultScreen
-import com.example.learningai.classroom.QuestionsScreen
-import com.example.learningai.user.LoginScreen
 import com.example.learningai.user.UserInputSCR
 import com.example.learningai.user.UserProfileSCR
 
@@ -49,14 +48,23 @@ fun AppNavGraph(
             )
         }
 
-        composable("${Routes.QUESTIONSCREEN}/{classroomId}") { backStack ->
+
+        composable(
+            "${Routes.QUESTIONSCREEN}/{classroomId}/{subject}/{count}/{difficulty}"
+        ) { backStack ->
+
             QuestionsScreen(
                 navController = navController,
-                classroomId = backStack.arguments?.getString("classroomId") ?: ""
+                classroomId = backStack.arguments?.getString("classroomId") ?: "",
+                subject = backStack.arguments?.getString("subject") ?: "",
+                count = backStack.arguments?.getString("count")?.toIntOrNull() ?: 5,
+                difficulty = backStack.arguments?.getString("difficulty") ?: "EASY"
             )
         }
 
-        composable("${Routes.RESULT}/{classroomId}/{score}/{total}") { backStack ->
+        composable(
+            "${Routes.RESULT}/{classroomId}/{score}/{total}"
+        ) { backStack ->
             ResultScreen(
                 classroomId = backStack.arguments?.getString("classroomId") ?: "",
                 score = backStack.arguments?.getString("score")?.toIntOrNull() ?: 0,

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.learningai.MVVM.AuthViewModel
 import com.example.learningai.user.LoginScreen
@@ -16,9 +17,11 @@ fun MainScreen(
     val navController = rememberNavController()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     if (!isLoggedIn) {
 
-        // ✅ LOGIN SCREEN
         LoginScreen(
             navController = navController,
             authViewModel = authViewModel
@@ -28,17 +31,19 @@ fun MainScreen(
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+
             topBar = {
                 AppTopBar(
                     title = "Learning AI",
                     navController = navController,
-                    showBack = false,
-                    currentRoute = null
+                    showBack = currentRoute != Routes.HOME,
+                    currentRoute = currentRoute
                 )
             },
+
             bottomBar = {
                 BottomAppBar(
-                    currentRoute = null,
+                    currentRoute = currentRoute,
                     onItemClick = { route ->
                         navController.navigate(route) {
                             launchSingleTop = true
@@ -46,8 +51,8 @@ fun MainScreen(
                     }
                 )
             }
-        ) { paddingValues ->
 
+        ) { paddingValues ->
             AppNavGraph(
                 navController = navController,
                 paddingValues = paddingValues
