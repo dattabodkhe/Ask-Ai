@@ -1,16 +1,33 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+build/
+
+# Local config
 local.properties
-app/src/main/res/drawable/Downloads/
+
+# IDE
+.idea/
+*.iml
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+
+# Native build
+.externalNativeBuild/
+.cxx/
+
+# APK / Bundle
+*.apk
+*.aab
+
+# Executables
+*.exe
+
+# Logs
+*.log
+
+# Captures
+captures/
