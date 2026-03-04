@@ -8,8 +8,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -19,69 +22,111 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewQuestionsScreen(
     navController: NavController,
-    initialQuestions: List<String>,
-    selectedClassId: String
+    selectedClassId: String,
+    initialQuestions: String
 ) {
-    val questionsList = remember { initialQuestions.toMutableStateList() }
-    var editingIndex by remember { mutableStateOf(-1) }
+    // 1. FIX: String JSON ko pehle List mein convert karna zaroori hai
+    val decodedQuestions = remember(initialQuestions) {
+        val type = object : TypeToken<List<String>>() {}.type
+        val list: List<String> = Gson().fromJson(initialQuestions, type) ?: emptyList()
+        list.toMutableStateList()
+    }
+
+    var editingIndex by remember { mutableIntStateOf(-1) }
     var editText by remember { mutableStateOf("") }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            Surface(tonalElevation = 8.dp, shadowElevation = 8.dp, color = Color.White) {
+            Surface(
+                tonalElevation = 8.dp,
+                shadowElevation = 12.dp,
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
                 Button(
                     onClick = {
-                        if (questionsList.isNotEmpty()) {
-                            val updatedJson = Gson().toJson(questionsList.toList())
+                        if (decodedQuestions.isNotEmpty()) {
+                            val updatedJson = Gson().toJson(decodedQuestions.toList())
                             val encodedJson = Uri.encode(updatedJson)
-                            navController.navigate("select_classroom/$encodedJson")
+
+                            // Logic based on classId
+                            if (selectedClassId.isNotEmpty() && !selectedClassId.contains("TEMP_ID")) {
+                                // Yahan apna message send karne ka logic likhein
+                            } else {
+                                navController.navigate("select_classroom/$encodedJson")
+                            }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Select Group to Send", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Select Group to Send", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF6F7FB))) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+
+            /* --- HEADER --- */
             Box(
-                modifier = Modifier.fillMaxWidth()
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED))),
-                        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-                    .statusBarsPadding().padding(bottom = 24.dp, start = 8.dp, end = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)),
+                        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+                    )
+                    .statusBarsPadding()
+                    .padding(bottom = 24.dp, top = 8.dp, start = 8.dp, end = 16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                     }
-                    Text("Review Questions", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(4.dp))
+                    Column {
+                        Text("Review Questions", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("${decodedQuestions.size} AI Generated Questions", color = Color.White.copy(0.8f), fontSize = 12.sp)
+                    }
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.weight(1f).padding(bottom = innerPadding.calculateBottomPadding()),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                itemsIndexed(questionsList) { index, question ->
-                    QuestionEditCard(
-                        index = index + 1,
-                        text = question,
-                        onDelete = { questionsList.removeAt(index) },
-                        onEdit = { editingIndex = index; editText = question }
-                    )
+            /* --- QUESTIONS LIST --- */
+            if (decodedQuestions.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No questions to review", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    itemsIndexed(decodedQuestions) { index, question ->
+                        QuestionEditCard(
+                            index = index + 1,
+                            text = question,
+                            onDelete = { decodedQuestions.removeAt(index) },
+                            onEdit = {
+                                editingIndex = index
+                                editText = question
+                            }
+                        )
+                    }
                 }
             }
         }
 
+        /* --- EDIT DIALOG --- */
         if (editingIndex != -1) {
             AlertDialog(
                 onDismissRequest = { editingIndex = -1 },
@@ -90,15 +135,16 @@ fun PreviewQuestionsScreen(
                     OutlinedTextField(
                         value = editText,
                         onValueChange = { editText = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
                 },
                 confirmButton = {
                     Button(onClick = {
-                        questionsList[editingIndex] = editText
-                        editingIndex = -1
-                    }) { Text("Update") }
+                        if (editText.isNotBlank()) {
+                            decodedQuestions[editingIndex] = editText
+                            editingIndex = -1
+                        }
+                    }) { Text("Save") }
                 },
                 dismissButton = {
                     TextButton(onClick = { editingIndex = -1 }) { Text("Cancel") }
@@ -112,26 +158,27 @@ fun PreviewQuestionsScreen(
 fun QuestionEditCard(index: Int, text: String, onDelete: () -> Unit, onEdit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row {
-                Text(
-                    text = "$index.",
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4F46E5),
-                    modifier = Modifier.width(28.dp)
-                )
-                Text(text = text, color = Color(0xFF2D3436), modifier = Modifier.weight(1f))
+                Surface(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text.take(0), color = Color.White) // Dummy
+                        Text(text = index.toString(), color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(text = text, modifier = Modifier.weight(1f))
             }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
-
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = onEdit) { Text("Edit", color = Color(0xFF4F46E5)) }
-                TextButton(onClick = onDelete) { Text("Delete", color = Color.Red) }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary) }
+                IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
             }
         }
     }

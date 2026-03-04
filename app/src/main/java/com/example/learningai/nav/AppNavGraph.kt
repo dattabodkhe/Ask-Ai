@@ -3,32 +3,29 @@ package com.example.learningai.nav
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.learningai.MVVM.DetailsFormViewModel
+import androidx.navigation.navArgument
 import com.example.learningai.classroom.*
 import com.example.learningai.home.*
 import com.example.learningai.login.*
-import com.example.learningai.model.UserRole
-import com.example.learningai.repository.DetailsFormViewModelFactory
+import com.example.learningai.premission.*
 import com.example.learningai.user.*
-import com.example.learningai.premission.SelectClassroomScreen
-import com.example.learningai.premission.PreviewQuestionsScreen
 import com.google.firebase.auth.FirebaseAuth
-import com.google.gson.Gson
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     paddingValues: PaddingValues? = null
 ) {
+
     val currentUser = FirebaseAuth.getInstance().currentUser
-    val startDestination = if (currentUser != null) Routes.HOME else Routes.ROLE_SELECTION
+    val startDestination =
+        if (currentUser != null) Routes.HOME
+        else Routes.ROLE_SELECTION
 
     NavHost(
         navController = navController,
@@ -36,7 +33,8 @@ fun AppNavGraph(
         modifier = Modifier.padding(paddingValues ?: PaddingValues())
     ) {
 
-        /* ---------- AUTH & ROLE SELECTION ---------- */
+        /* ---------------- AUTH FLOW ---------------- */
+
         composable(Routes.ROLE_SELECTION) {
             RoleSelectionScreen { role ->
                 navController.navigate("${Routes.LOGIN}/$role") {
@@ -45,106 +43,168 @@ fun AppNavGraph(
             }
         }
 
-        composable("${Routes.LOGIN}/{role}") { entry ->
-            val role = entry.arguments?.getString("role") ?: "SELF"
+        composable(
+            route = "${Routes.LOGIN}/{role}",
+            arguments = listOf(navArgument("role") { type = NavType.StringType })
+        ) {
             LoginRoute(
-                authViewModel = viewModel(),
+                authViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
                 onLoginSuccess = {
                     navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
         }
 
-        /* ---------- ONBOARDING / DETAILS FORM ---------- */
-        composable("${Routes.DETAILS_FORM}/{role}") { entry ->
-            val roleString = entry.arguments?.getString("role") ?: "SELF"
-            val role = try { UserRole.valueOf(roleString) } catch (e: Exception) { UserRole.SELF }
-            val vm: DetailsFormViewModel = viewModel(factory = DetailsFormViewModelFactory(role))
-            val uiState by vm.uiState.collectAsState()
+        /* ---------------- HOME ---------------- */
 
-            DetailsFormScreen(
-                uiState = uiState,
-                onInstitutionTypeSelected = { vm.onInstitutionTypeSelected(it) },
-                onCountryChanged = { vm.onCountryChanged(it) },
-                onStateChanged = { vm.onStateChanged(it) },
-                onUniversityChanged = { vm.onUniversityChanged(it) },
-                onCollegeChanged = { vm.onCollegeChanged(it) },
-                onCollegeEmailChanged = { vm.onCollegeEmailChanged(it) },
-                onCollegeIdChanged = { vm.onCollegeIdChanged(it) },
-                onPrnChanged = { vm.onPrnChanged(it) },
-                onPrivateClassChanged = { vm.onPrivateClassChanged(it) },
-                onStudentIdChanged = { vm.onStudentIdChanged(it) },
-                onSubmit = {
-                    vm.onSubmit()
-                    navController.navigate(Routes.HOME) { popUpTo(0) { inclusive = true } }
-                }
-            )
+        composable(Routes.HOME) {
+            HomeDashboardScreen(navController)
         }
 
-        /* ---------- MAIN DASHBOARD & PROFILE ---------- */
-        composable(Routes.HOME) { HomeDashboardScreen(navController) }
+        /* ---------------- CHAT ---------------- */
 
-        composable(Routes.USER_PROFILE) { UserProfileSCR(navController) }
+        composable(Routes.CHAT) {
+            UserInputSCR(navController)
+        }
 
-        // Settings Route
-        composable(Routes.SETTINGS) { SettingsScreen(navController) }
+        /* ---------------- CLASSROOM ---------------- */
 
-        composable(Routes.PRIVACY_POLICY) { PrivacyPolicyScreen(navController) }
+        composable(Routes.CLASSROOM) {
+            ClassroomScreen(navController)
+        }
 
-        composable(Routes.CONTACTS) { ContactsScreen(navController) }
+        composable(Routes.JOIN_CLASSROOM) {
+            JoinClassroomScreen(navController)
+        }
 
-        /* ---------- CLASSROOM FLOW ---------- */
-        composable(Routes.CLASSROOM) { ClassroomScreen(navController) }
-
-        composable(Routes.CREATE_CLASSROOM) { CreateClassroomSCR(navController) }
-
-        composable(Routes.JOIN_CLASSROOM) { JoinClassroomScreen(navController) }
-
-        composable("${Routes.CLASSROOM_CHAT}/{classId}") { backStackEntry ->
+        composable(
+            route = "${Routes.CLASSROOM_CHAT}/{classId}",
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getString("classId") ?: ""
             ClassroomChatScreen(navController, classId)
         }
 
-        /* ---------- AI & CHAT ---------- */
-        composable(Routes.CHAT) { UserInputSCR(navController) }
-
-        composable(Routes.CREATE_AI_QUESTION) { CreateAIquestion(navController) }
-
-        /* ---------- QUESTION FLOW ---------- */
-        composable("${Routes.SELECT_CLASSROOM}/{questionsJson}") { backStackEntry ->
-            val questionsJson = backStackEntry.arguments?.getString("questionsJson") ?: ""
-            SelectClassroomScreen(navController = navController, questionsJson = questionsJson)
-        }
-
-        composable("${Routes.PREVIEW_QUESTIONS}/{classId}/{questionsJson}") { backStackEntry ->
+        composable(
+            route = "group_profile/{classId}",
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getString("classId") ?: ""
-            val questionsJson = backStackEntry.arguments?.getString("questionsJson") ?: ""
-            val questionsList = try {
-                Gson().fromJson(questionsJson, Array<String>::class.java).toList()
-            } catch (e: Exception) { emptyList<String>() }
-
-            PreviewQuestionsScreen(navController = navController, initialQuestions = questionsList, selectedClassId = classId)
+            GroupProfileScreen(navController, classId)
         }
 
-        composable("${Routes.QUESTIONSCREEN}/{classroomId}/{subject}/{count}/{difficulty}") { backStackEntry ->
-            val count = backStackEntry.arguments?.getString("count")?.toIntOrNull() ?: 0
+        /* ---------------- QUESTIONS SCREEN ---------------- */
+
+        composable(
+            route = "${Routes.QUESTIONSCREEN}/{classroomId}/{subject}/{count}/{difficulty}",
+            arguments = listOf(
+                navArgument("classroomId") { type = NavType.StringType },
+                navArgument("subject") { type = NavType.StringType },
+                navArgument("count") { type = NavType.IntType },
+                navArgument("difficulty") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val classroomId =
+                backStackEntry.arguments?.getString("classroomId") ?: ""
+            val subject =
+                backStackEntry.arguments?.getString("subject") ?: ""
+            val count =
+                backStackEntry.arguments?.getInt("count") ?: 0
+            val difficulty =
+                backStackEntry.arguments?.getString("difficulty") ?: ""
+
             QuestionsScreen(
                 navController = navController,
-                classroomId = backStackEntry.arguments?.getString("classroomId") ?: "",
-                subject = backStackEntry.arguments?.getString("subject") ?: "",
+                classroomId = classroomId,
+                subject = subject,
                 count = count,
-                difficulty = backStackEntry.arguments?.getString("difficulty") ?: "EASY"
+                difficulty = difficulty
             )
         }
 
-        /* ---------- RESULTS ---------- */
-        composable("${Routes.RESULT}/{classId}/{score}/{total}") { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("classId") ?: ""
-            val s = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-            val t = backStackEntry.arguments?.getString("total")?.toIntOrNull() ?: 0
-            ResultScreen(id, s, t, FirebaseAuth.getInstance().currentUser?.uid ?: "", navController)
+        /* ---------------- RESULT SCREEN ---------------- */
+
+        composable(
+            route = "${Routes.RESULT}/{classroomId}/{score}/{totalQuestions}/{userId}",
+            arguments = listOf(
+                navArgument("classroomId") { type = NavType.StringType },
+                navArgument("score") { type = NavType.IntType },
+                navArgument("totalQuestions") { type = NavType.IntType },
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val classroomId =
+                backStackEntry.arguments?.getString("classroomId") ?: ""
+            val score =
+                backStackEntry.arguments?.getInt("score") ?: 0
+            val totalQuestions =
+                backStackEntry.arguments?.getInt("totalQuestions") ?: 0
+            val userId =
+                backStackEntry.arguments?.getString("userId") ?: ""
+
+            ResultScreen(
+                classroomId = classroomId,
+                score = score,
+                totalQuestions = totalQuestions,
+                userId = userId,
+                navController = navController
+            )
+        }
+
+        /* ---------------- PROFILE ---------------- */
+
+        composable(Routes.USER_PROFILE) {
+            UserProfileSCR(navController)
+        }
+
+        /* ---------------- SETTINGS ---------------- */
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(navController)
+        }
+
+        /* ---------------- PRIVACY POLICY ---------------- */
+
+        composable(Routes.PRIVACY_POLICY) {
+            PrivacyPolicyScreen(navController)
+        }
+
+        /* ---------------- CONTACTS ---------------- */
+
+        composable(Routes.CONTACTS) {
+            ContactsScreen(navController)
+        }
+
+        /* ---------------- AI QUESTION CREATION ---------------- */
+
+        composable(Routes.CREATE_AI_QUESTION) {
+            CreateAIquestion(navController)
+        }
+
+        composable(
+            route = "${Routes.SELECT_CLASSROOM}/{questionsJson}",
+            arguments = listOf(
+                navArgument("questionsJson") { type = NavType.StringType }
+            )
+        ) { entry ->
+            val json = entry.arguments?.getString("questionsJson") ?: ""
+            SelectClassroomScreen(navController, json)
+        }
+
+        composable(
+            route = "${Routes.PREVIEW_QUESTIONS}/{classId}/{questionsJson}",
+            arguments = listOf(
+                navArgument("classId") { type = NavType.StringType },
+                navArgument("questionsJson") { type = NavType.StringType }
+            )
+        ) { entry ->
+            val classId = entry.arguments?.getString("classId") ?: ""
+            val json = entry.arguments?.getString("questionsJson") ?: ""
+            PreviewQuestionsScreen(navController, classId, json)
         }
     }
 }

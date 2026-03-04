@@ -4,8 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,203 +12,110 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.learningai.R
-import com.example.learningai.ui.theme.Primary
 
 @Composable
-fun LoginScreen(
-    onGoogleLogin: () -> Unit,
-    onEmailLogin: (String, String) -> Unit
+fun LoginScreen(onGoogleLogin: () -> Unit,
+                onEmailLogin: (String, String) -> Unit
 ) {
-
-    var showEmailForm by remember { mutableStateOf(false) }
-
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
+    // Gradient colors jo Light/Dark ke hisaab se adjust honge
+    val bgGradient = Brush.verticalGradient(
+        listOf(
+            MaterialTheme.colorScheme.background,
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFF7F9FF),
-                        Color(0xFFF1F4FF)
-                    )
-                )
-            )
+            .background(bgGradient)
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp),
-
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
 
-            /* Logo */
+            /* Logo Section */
             Surface(
                 shape = RoundedCornerShape(22.dp),
-                color = Primary,
-                modifier = Modifier.size(72.dp)
+                color = MaterialTheme.colorScheme.primary, // Theme primary color
+                modifier = Modifier.size(80.dp),
+                tonalElevation = 4.dp
             ) {
-
                 Icon(
                     painter = painterResource(R.drawable.outline_question_mark_24),
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.padding(16.dp)
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.padding(20.dp)
                 )
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
 
-
+            /* Welcome Text */
             Text(
-                "Welcome to LearningAI",
+                text = "Welcome to LearningAI",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
             )
 
-
-            Spacer(Modifier.height(6.dp))
-
+            Spacer(Modifier.height(8.dp))
 
             Text(
-                "Sign in to continue your journey",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "Sign in to continue your journey",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
 
+            Spacer(Modifier.height(48.dp))
 
-            Spacer(Modifier.height(36.dp))
-
-
-            /* Google Button */
+            /* Google Login Button - Ab ye mode ke hisaab se color change karega */
             Button(
                 onClick = onGoogleLogin,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
+                    .height(58.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                )
+                    containerColor = MaterialTheme.colorScheme.surface, // Dark mein dark, light mein white
+                    contentColor = MaterialTheme.colorScheme.onSurface  // Text color automatic switch hoga
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
-
                 Image(
-                    painter = painterResource(R.drawable.logo),
+                    painter = painterResource(R.drawable.logo), // Aapka Google Logo
                     contentDescription = null,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
 
-                Text("Continue with Google")
-            }
-
-
-            Spacer(Modifier.height(22.dp))
-
-
-            /* OR */
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                HorizontalDivider(Modifier.weight(1f))
-
-                Text("  or  ")
-
-                HorizontalDivider(Modifier.weight(1f))
-            }
-
-
-            Spacer(Modifier.height(22.dp))
-
-
-            /* Email Button */
-            OutlinedButton(
-                onClick = {
-                    showEmailForm = !showEmailForm
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-
-                Icon(Icons.Default.Email, null)
-
-                Spacer(Modifier.width(12.dp))
-
-                Text("Continue with Email")
-            }
-
-
-            /* Email Form */
-            if (showEmailForm) {
-
-                Spacer(Modifier.height(24.dp))
-
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                Text(
+                    text = "Continue with Google",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
                 )
-
-
-                Spacer(Modifier.height(14.dp))
-
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation()
-                )
-
-
-                Spacer(Modifier.height(18.dp))
-
-
-                Button(
-                    onClick = {
-                        if (email.isNotBlank() && password.isNotBlank()) {
-                            onEmailLogin(email, password)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                ) {
-
-                    Text("Login")
-                }
             }
         }
 
-
-        /* Bottom Text */
+        /* Terms & Privacy - Fixed at Bottom */
         Text(
-            "By continuing, you agree to our Terms & Privacy Policy",
+            text = "By continuing, you agree to our Terms & Privacy Policy",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(24.dp)
+                .padding(bottom = 32.dp, start = 40.dp, end = 40.dp),
+            textAlign = TextAlign.Center
         )
     }
 }

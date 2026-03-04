@@ -45,47 +45,47 @@ fun SettingsScreen(navController: NavController) {
     val sheetState = rememberModalBottomSheetState()
     var showSocialSheet by remember { mutableStateOf(false) }
 
-    val purpleGradient = Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED)))
+    // Universal Gradient
+    val purpleGradient = Brush.horizontalGradient(
+        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+    )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF6F7FB))
-    ) {
-        /* ---------- HEADER ---------- */
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(purpleGradient, RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
-                .statusBarsPadding()
-                .padding(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = {
-                    if (activeTab == "MAIN") navController.popBackStack()
-                    else activeTab = "MAIN"
-                }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(purpleGradient, RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .statusBarsPadding()
+                    .padding(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        if (activeTab == "MAIN") navController.popBackStack()
+                        else activeTab = "MAIN"
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+                    Text(
+                        text = if (activeTab == "MAIN") "Settings" else activeTab.replace("_", " "),
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                Text(
-                    text = if (activeTab == "MAIN") "Settings" else activeTab.replace("_", " "),
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
-
-        /* ---------- CONTENT AREA ---------- */
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
             when (activeTab) {
                 "MAIN" -> {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         SettingListTile("Account & Security", Icons.Default.Lock) { activeTab = "ACCOUNT_SECURITY" }
-                        SettingListTile("Support & About", Icons.Default.Info) { activeTab = "SUPPORT_ABOUT" }
-                        SettingListTile("Social & Feedback", Icons.Default.Star) { activeTab = "SOCIAL_FEEDBACK" }
+                        SettingListTile("Support & About", Icons.Default.Warning) { activeTab = "SUPPORT_ABOUT" }
+                        SettingListTile("Social & Feedback", Icons.Default.Favorite) { activeTab = "SOCIAL_FEEDBACK" }
 
-                        Spacer(Modifier.height(30.dp))
+                        Spacer(Modifier.height(40.dp))
 
                         // LOGOUT CARD
                         Card(
@@ -93,13 +93,14 @@ fun SettingsScreen(navController: NavController) {
                                 auth.signOut()
                                 navController.navigate(Routes.ROLE_SELECTION) { popUpTo(0) { inclusive = true } }
                             },
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                            shape = RoundedCornerShape(12.dp)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
                         ) {
-                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Delete, null, tint = Color.Red)
+                            Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
                                 Spacer(Modifier.width(16.dp))
-                                Text("Logout Account", color = Color.Red, fontWeight = FontWeight.Bold)
+                                Text("Logout Account", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -107,10 +108,10 @@ fun SettingsScreen(navController: NavController) {
 
                 "ACCOUNT_SECURITY" -> {
                     SettingsDetailCard(onBack = { activeTab = "MAIN" }) {
-                        Text("Security Management", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Security Management", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(16.dp))
 
-                        ActionRow("Reset Password via Email", Icons.Default.Build) {
+                        ActionRow("Reset Password via Email", Icons.Default.Lock) {
                             val email = auth.currentUser?.email
                             if (email != null) {
                                 auth.sendPasswordResetEmail(email).addOnCompleteListener { task ->
@@ -121,9 +122,9 @@ fun SettingsScreen(navController: NavController) {
                             }
                         }
 
-                        HorizontalDivider(Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                        HorizontalDivider(Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
-                        ActionRow("Delete My Account", Icons.Default.Delete, Color.Red) {
+                        ActionRow("Delete My Account", Icons.Default.AccountBox, MaterialTheme.colorScheme.error) {
                             showDeleteDialog = true
                         }
                     }
@@ -131,17 +132,17 @@ fun SettingsScreen(navController: NavController) {
 
                 "SUPPORT_ABOUT" -> {
                     SettingsDetailCard(onBack = { activeTab = "MAIN" }) {
-                        Text("About LearningAI", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("Version: 1.0.2", color = Color.Gray, fontSize = 14.sp)
-                        HorizontalDivider(Modifier.padding(vertical = 16.dp))
+                        Text("About LearningAI", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        Text("Version: 1.0.2", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                         Text("Privacy Policy", fontWeight = FontWeight.Bold)
-                        Text("Your data is safe with our Firebase-encrypted servers.", fontSize = 13.sp, color = Color.Gray)
+                        Text("Your data is safe with our encrypted servers.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
                 "SOCIAL_FEEDBACK" -> {
                     SettingsDetailCard(onBack = { activeTab = "MAIN" }) {
-                        Text("Community & Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Community & Feedback", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(12.dp))
 
                         ActionRow("Share with Friends", Icons.Default.Share) {
@@ -153,12 +154,11 @@ fun SettingsScreen(navController: NavController) {
                             context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                         }
 
-                        // INSTAGRAM POPUP TRIGGER
-                        ActionRow("Follow us on Instagram", Icons.Default.Info) {
+                        ActionRow("Follow us on Instagram", Icons.Default.AccountBox) {
                             showSocialSheet = true
                         }
 
-                        ActionRow("Rate on Play Store", Icons.Default.Star) {
+                        ActionRow("Rate on Play Store", Icons.Default.ThumbUp) {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${context.packageName}"))
                             try { context.startActivity(intent) } catch (e: Exception) { }
                         }
@@ -168,70 +168,66 @@ fun SettingsScreen(navController: NavController) {
         }
     }
 
-    /* ---------- INSTAGRAM BOTTOM SHEET (POPUP) ---------- */
+    /* ---------- MODAL BOTTOM SHEET ---------- */
     if (showSocialSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSocialSheet = false },
             sheetState = sheetState,
-            containerColor = Color.White,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Instagram Brand Color Icon
-                Icon(
-                    Icons.Default.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = Color(0xFFE1306C)
-                )
-                Spacer(Modifier.height(16.dp))
-                Text("Follow the Developer", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Surface(
+                    color = Color(0xFFE1306C).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Star, null, modifier = Modifier.size(40.dp), tint = Color(0xFFE1306C))
+                    }
+                }
+                Spacer(Modifier.height(20.dp))
+                Text("Follow Developer", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
                 Text(
-                    "Get the latest updates and AI learning tips directly from the developer.",
+                    "Get latest updates and AI tips directly from the developer.",
                     textAlign = TextAlign.Center,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(32.dp))
 
                 Button(
                     onClick = {
-                        val instaUser = "APP DEVELOPER"
+                        val instaUser = "app developer official"
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("http://instagram.com/_u/$instaUser")).apply {
                             setPackage("com.instagram.android")
                         }
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            // Browser backup if app is not installed
+                        try { context.startActivity(intent) } catch (e: Exception) {
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/$instaUser")))
                         }
-                        // Close sheet after clicking
                         scope.launch { sheetState.hide() }.invokeOnCompletion { showSocialSheet = false }
                     },
-                    modifier = Modifier.fillMaxWidth().height(55.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE1306C)),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Open Instagram", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Open Instagram", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
             }
         }
     }
 
-    /* ---------- DELETE DIALOG ---------- */
+    /* ---------- DIALOGS ---------- */
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Delete Account?") },
-            text = { Text("Are you sure? All your data will be permanently removed.") },
+            text = { Text("All your progress will be permanently lost. This action cannot be undone.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -241,7 +237,7 @@ fun SettingsScreen(navController: NavController) {
                         }
                         showDeleteDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) { Text("Delete", color = Color.White) }
             },
             dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") } }
@@ -249,22 +245,30 @@ fun SettingsScreen(navController: NavController) {
     }
 }
 
-/* ---------- SHARED COMPONENTS (STAYS SAME) ---------- */
+/* ---------- SHARED COMPONENTS ---------- */
 
 @Composable
 fun SettingListTile(title: String, icon: ImageVector, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onClick() },
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
         Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(24.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                }
+            }
             Spacer(Modifier.width(16.dp))
             Text(title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            Icon(Icons.Default.Star, null, tint = Color.LightGray)
+            Icon(Icons.Default.AccountBox, null, tint = MaterialTheme.colorScheme.outline)
         }
     }
 }
@@ -273,31 +277,34 @@ fun SettingListTile(title: String, icon: ImageVector, onClick: () -> Unit) {
 fun SettingsDetailCard(onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(6.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             content()
-            Spacer(Modifier.height(20.dp))
-            Button(
+            Spacer(Modifier.height(24.dp))
+            TextButton(
                 onClick = onBack,
-                modifier = Modifier.align(Alignment.End),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F3F9))
-            ) { Text("Back to Menu", color = Color.Black) }
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Back to Menu", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
 
 @Composable
-fun ActionRow(label: String, icon: ImageVector, color: Color = Color.Black, onClick: () -> Unit) {
+fun ActionRow(label: String, icon: ImageVector, color: Color = Color.Unspecified, onClick: () -> Unit) {
+    val finalColor = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else color
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = color.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
+        Icon(icon, null, tint = finalColor.copy(alpha = 0.8f), modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(14.dp))
-        Text(label, color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = finalColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
 }

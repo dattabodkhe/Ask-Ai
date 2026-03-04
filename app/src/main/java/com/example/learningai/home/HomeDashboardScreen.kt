@@ -30,23 +30,18 @@ import kotlinx.coroutines.tasks.await
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeDashboardScreen(navController: NavHostController) {
-
     val firestore = FirebaseFirestore.getInstance()
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
     var classroomList by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var fabExpanded by remember { mutableStateOf(false) }
-
-    // --- Stats States ---
     var questionsSolved by remember { mutableIntStateOf(0) }
     var groupsJoined by remember { mutableIntStateOf(0) }
 
-    /* -------- LOAD DATA -------- */
     LaunchedEffect(uid) {
         if (uid != null) {
             try {
-                // 1. Load Classrooms
                 val result = firestore.collection("classrooms")
                     .whereArrayContains("members", uid)
                     .get().await()
@@ -54,16 +49,12 @@ fun HomeDashboardScreen(navController: NavHostController) {
                     Pair(it.id, it.getString("name") ?: "Untitled")
                 }
 
-                // 2. Load Solved Questions Count (Collection Group)
                 val questionSnapshot = firestore.collectionGroup("messages")
                     .whereEqualTo("senderId", uid)
                     .whereEqualTo("type", "ai_questions")
                     .get().await()
                 questionsSolved = questionSnapshot.size()
-
-                // 3. Load Groups Count
                 groupsJoined = classroomList.size
-
             } catch (e: Exception) {
                 Log.e("HOME", "Error: ${e.message}")
             } finally {
@@ -72,7 +63,6 @@ fun HomeDashboardScreen(navController: NavHostController) {
         }
     }
 
-    // Rank Logic
     val rank = when {
         questionsSolved >= 1000 -> "DGP"
         questionsSolved >= 500 -> "Comm."
@@ -83,7 +73,7 @@ fun HomeDashboardScreen(navController: NavHostController) {
         else -> "Tr."
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF6F7FB))) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 140.dp)
@@ -93,15 +83,16 @@ fun HomeDashboardScreen(navController: NavHostController) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(240.dp)
+                        .height(260.dp)
                         .background(
-                            Brush.verticalGradient(listOf(Color(0xFF4F46E5), Color(0xFF6D28D9))),
+                            Brush.verticalGradient(
+                                listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                            ),
                             shape = RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp)
                         )
                         .padding(horizontal = 20.dp, vertical = 24.dp)
                 ) {
                     Column(modifier = Modifier.statusBarsPadding()) {
-                        /* Profile Row */
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val currentUser = FirebaseAuth.getInstance().currentUser
                             val displayName = currentUser?.displayName ?: "User"
@@ -109,25 +100,33 @@ fun HomeDashboardScreen(navController: NavHostController) {
 
                             Box(
                                 modifier = Modifier
-                                    .size(50.dp)
+                                    .size(54.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White)
+                                    .background(Color.White.copy(alpha = 0.2f)) // Glassmorphism touch
                                     .clickable { navController.navigate(Routes.USER_PROFILE) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(firstLetter, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF4F46E5))
+                                Surface(shape = CircleShape, color = Color.White) {
+                                    Text(
+                                        text = firstLetter,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 22.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
 
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text("Welcome back 👋", color = Color.White.copy(0.85f), fontSize = 13.sp)
+                                Text("Welcome back 👋", color = Color.White.copy(0.8f), fontSize = 13.sp)
                                 Text("Hi $displayName", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                             }
                         }
 
                         Spacer(Modifier.height(30.dp))
 
-                        /* Updated Stats Row (Solved, Groups, Rank) */
+                        /* Stats Row */
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -148,7 +147,7 @@ fun HomeDashboardScreen(navController: NavHostController) {
             item {
                 if (isLoading) {
                     Box(Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF6D28D9))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (classroomList.isEmpty()) {
                     EmptyClassroomCard { navController.navigate(Routes.CREATE_CLASSROOM) }
@@ -174,12 +173,16 @@ fun HomeDashboardScreen(navController: NavHostController) {
         ) {
             if (fabExpanded) {
                 ExtendedFloatingActionButton(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     text = { Text("Add Friend") },
                     icon = { Icon(Icons.Default.Person, null) },
                     onClick = { fabExpanded = false; navController.navigate(Routes.CONTACTS) },
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
                 ExtendedFloatingActionButton(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     text = { Text("Create Question") },
                     icon = { Icon(Icons.Default.Add, null) },
                     onClick = { fabExpanded = false; navController.navigate(Routes.CREATE_AI_QUESTION) },
@@ -187,36 +190,41 @@ fun HomeDashboardScreen(navController: NavHostController) {
                 )
             }
             FloatingActionButton(
-                containerColor = Color(0xFF6C5CE7),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 onClick = { fabExpanded = !fabExpanded }
             ) {
-                Icon(Icons.Default.Add, null, tint = Color.White)
+                Icon(if (fabExpanded) Icons.Default.Add else Icons.Default.Add, null)
             }
         }
     }
 }
 
-/* --- Helper Composables --- */
-
 @Composable
 fun SectionTitle(text: String) {
-    Text(text, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+    Text(
+        text = text,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        color = MaterialTheme.colorScheme.onBackground
+    )
 }
 
 @Composable
 fun StatCard(value: String, label: String, modifier: Modifier) {
-    Card(
-        modifier = modifier.height(85.dp), // Fixed height for better look
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.15f)),
-        shape = RoundedCornerShape(16.dp)
+    Surface(
+        modifier = modifier.height(90.dp),
+        color = Color.White.copy(alpha = 0.15f), // Glassmorphism effect
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-            Text(label, color = Color.White.copy(0.8f), fontSize = 11.sp)
+            Text(value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+            Text(label, color = Color.White.copy(0.7f), fontSize = 12.sp)
         }
     }
 }
@@ -225,16 +233,21 @@ fun StatCard(value: String, label: String, modifier: Modifier) {
 fun JoinClassroomCard(onClick: () -> Unit) {
     Card(
         modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Person, null, tint = Color(0xFF4F46E5))
-            Spacer(Modifier.width(12.dp))
+        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary.copy(0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.width(16.dp))
             Column {
-                Text("Join Classroom", fontWeight = FontWeight.SemiBold)
-                Text("Collaborate with peers", fontSize = 12.sp, color = Color.Gray)
+                Text("Join Classroom", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Collaborate with peers", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -242,11 +255,18 @@ fun JoinClassroomCard(onClick: () -> Unit) {
 
 @Composable
 fun EmptyClassroomCard(onCreateClick: () -> Unit) {
-    Card(modifier = Modifier.padding(16.dp).fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-        Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("No Classrooms Yet 😢", fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = onCreateClick, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D28D9))) {
+    Card(
+        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("No Classrooms Yet 😢", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = onCreateClick,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
                 Text("Create Classroom")
             }
         }

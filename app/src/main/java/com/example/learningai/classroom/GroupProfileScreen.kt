@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -27,7 +29,6 @@ fun GroupProfileScreen(
     navController: NavController,
     classId: String
 ) {
-
     val firestore = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
 
@@ -36,182 +37,165 @@ fun GroupProfileScreen(
     var createdBy by remember { mutableStateOf("") }
     var isAdmin by remember { mutableStateOf(false) }
 
-    /* ---------------- LOAD DATA ---------------- */
-
     LaunchedEffect(classId) {
         try {
-            val doc = firestore.collection("classrooms")
-                .document(classId)
-                .get()
-                .await()
-
+            val doc = firestore.collection("classrooms").document(classId).get().await()
             classroomName = doc.getString("name") ?: "Group"
             createdBy = doc.getString("createdBy") ?: ""
-
             val memberUids = doc.get("members") as? List<String> ?: emptyList()
-
             val tempList = mutableListOf<Pair<String, String>>()
 
             for (uid in memberUids) {
-
-                val userDoc = firestore.collection("users")
-                    .document(uid)
-                    .get()
-                    .await()
-
-                val name =
-                    userDoc.getString("name")
-                        ?: userDoc.getString("displayName")
-                        ?: "Unknown User"
-
+                val userDoc = firestore.collection("users").document(uid).get().await()
+                val name = userDoc.getString("name") ?: userDoc.getString("displayName") ?: "Unknown User"
                 tempList.add(uid to name)
             }
-
             members = tempList
             isAdmin = currentUser?.uid == createdBy
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
-    /* ---------------- UI ---------------- */
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF6F7FB))
-    ) {
-
-        TopAppBar(
-            title = { Text("Group Info") },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-                }
-            }
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        /* -------- GROUP PROFILE -------- */
-
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background, // Fixed: Dynamic BG
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Group Info", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(padding)
         ) {
-
-            Box(
+            /* -------- GROUP HEADER -------- */
+            Column(
                 modifier = Modifier
-                    .size(90.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                Color(0xFF4F46E5),
-                                Color(0xFF7C3AED)
-                            )
-                        ),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Surface(
+                    shape = CircleShape,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 4.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = classroomName.firstOrNull()?.uppercase() ?: "G",
+                            color = Color.White,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
                 Text(
-                    text = classroomName.firstOrNull()?.uppercase() ?: "G",
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineMedium
+                    text = classroomName,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Text(
+                    text = "${members.size} Members",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-
             Text(
-                classroomName,
-                style = MaterialTheme.typography.headlineSmall
+                text = "Members List",
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(Modifier.height(4.dp))
-
-            Text(
-                "${members.size} Members",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        HorizontalDivider()
-
-        Spacer(Modifier.height(12.dp))
-
-        /* -------- MEMBER LIST -------- */
-
-        LazyColumn {
-
-            items(members) { (uid, name) ->
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-
-                    Row(
+            /* -------- MEMBER LIST -------- */
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                items(members) { (uid, name) ->
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
                     ) {
-
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .size(42.dp)
-                                .background(
-                                    Color(0xFFE0E7FF),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                name.firstOrNull()?.uppercase() ?: "U",
-                                color = Color(0xFF4F46E5)
-                            )
-                        }
-
-                        Spacer(Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-
-                            Text(name)
-
-                            if (uid == createdBy) {
-                                Text(
-                                    "Admin",
-                                    color = Color(0xFF6C5CE7),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-
-                        /* -------- REMOVE BUTTON -------- */
-
-                        if (isAdmin && uid != currentUser?.uid) {
-
-                            TextButton(
-                                onClick = {
-
-                                    firestore.collection("classrooms")
-                                        .document(classId)
-                                        .update(
-                                            "members",
-                                            FieldValue.arrayRemove(uid)
-                                        )
-                                }
+                            // Member Avatar
+                            Surface(
+                                modifier = Modifier.size(44.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer
                             ) {
-                                Text("Remove", color = Color.Red)
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        name.firstOrNull()?.uppercase() ?: "U",
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                if (uid == createdBy) {
+                                    Text(
+                                        text = "Admin",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            if (isAdmin && uid != currentUser?.uid) {
+                                IconButton(
+                                    onClick = {
+                                        firestore.collection("classrooms")
+                                            .document(classId)
+                                            .update("members", FieldValue.arrayRemove(uid))
+                                    }
+                                ) {
+                                    Text("Remove", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                                }
                             }
                         }
                     }

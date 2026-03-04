@@ -1,5 +1,6 @@
 package com.example.learningai.classroom
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,21 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.learningai.model.Difficulty
 import com.example.learningai.nav.Routes
-import java.util.UUID
-
-import android.net.Uri
-import androidx.compose.ui.text.font.FontWeight
 import com.google.gson.Gson
-
-// ... existing imports ...
-import kotlinx.coroutines.delay // Add this for simulation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-// ... baki saare imports same rahenge ...
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,13 +64,13 @@ fun CreateAIquestion(
         return isAllValid
     }
 
-    // --- Navigation Dialog ---
+    // --- Navigation Dialog (Themed) ---
     if (showOptions) {
         AlertDialog(
             onDismissRequest = { showOptions = false },
-            title = { Text("Questions Ready! 🤖") },
-            text = { Text("AI has generated the questions. What's the next step?") },
-
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Questions Ready! 🤖", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("AI has generated the questions. What's the next step?", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -86,10 +82,9 @@ fun CreateAIquestion(
                         )
                         val jsonString = Gson().toJson(dummyQuestions)
                         val encodedJson = Uri.encode(jsonString)
-
                         navController.navigate("${Routes.PREVIEW_QUESTIONS}/TEMP_ID/$encodedJson")
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) { Text("Send in Classroom") }
             },
             dismissButton = {
@@ -97,47 +92,86 @@ fun CreateAIquestion(
                     showOptions = false
                     val selfId = "SELF_${UUID.randomUUID()}"
                     navController.navigate("${Routes.QUESTIONSCREEN}/$selfId/${selectedSubject.trim()}/${questionCount.trim()}/${difficulty.name}")
-                }) { Text("Self Practice") }
+                }) { Text("Self Practice", color = MaterialTheme.colorScheme.primary) }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(24.dp)
         )
     }
 
     /* -------- UI LAYOUT -------- */
+    val bgGradient = Brush.verticalGradient(
+        listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary,
+            MaterialTheme.colorScheme.background
+        )
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFFF6F7FB))))
+            .background(bgGradient)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             /* Header */
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 60.dp, start = 24.dp, end = 24.dp)) {
-                Text("Create Powerful Questions 💡", style = MaterialTheme.typography.headlineMedium, color = Color.White)
-                Spacer(Modifier.height(6.dp))
-                Text("Push your limits. Let AI boost your learning 🚀", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(top = 20.dp, start = 24.dp, end = 24.dp)
+            ) {
+                Text(
+                    "Create Powerful Questions 💡",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Push your limits. Let AI boost your learning 🚀",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.85f)
+                )
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(32.dp))
 
-            /* Card */
+            /* Card Content */
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(12.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Generate AI Questions 🤖", style = MaterialTheme.typography.headlineSmall)
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Generate AI Questions 🤖",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(Modifier.height(8.dp))
 
                     OutlinedTextField(
                         value = selectedSubject,
                         onValueChange = { selectedSubject = it; if (subjectError) subjectError = false },
                         label = { Text("Subject Name") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         isError = subjectError,
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        supportingText = { if (subjectError) Text(text = subjectErrorMessage, color = MaterialTheme.colorScheme.error) },
-                        enabled = !isGenerating
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        supportingText = { if (subjectError) Text(text = subjectErrorMessage) },
+                        enabled = !isGenerating,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
                     )
 
                     OutlinedTextField(
@@ -145,23 +179,44 @@ fun CreateAIquestion(
                         onValueChange = { if (it.all { char -> char.isDigit() }) { questionCount = it; if (countError) countError = false } },
                         label = { Text("Questions (1-50)") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         isError = countError,
-                        supportingText = { if (countError) Text(text = "Enter 1-50", color = MaterialTheme.colorScheme.error) },
-                        enabled = !isGenerating
+                        supportingText = { if (countError) Text(text = "Enter 1-50") },
+                        enabled = !isGenerating,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
                     )
 
-                    Text("Difficulty", style = MaterialTheme.typography.labelLarge)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "Difficulty",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Difficulty.entries.forEach { level ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                RadioButton(selected = difficulty == level, onClick = { if(!isGenerating) difficulty = level }, enabled = !isGenerating)
-                                Text(level.name)
+                                RadioButton(
+                                    selected = difficulty == level,
+                                    onClick = { if(!isGenerating) difficulty = level },
+                                    enabled = !isGenerating,
+                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                                )
+                                Text(
+                                    level.name.lowercase().capitalize(),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
 
                     /* ACTION BUTTON */
                     Button(
@@ -169,25 +224,34 @@ fun CreateAIquestion(
                             if (validateForm()) {
                                 isGenerating = true
                                 scope.launch {
-                                    delay(3000) // AI thinking simulation
+                                    delay(3000)
                                     isGenerating = false
                                     showOptions = true
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C5CE7)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                        ),
                         enabled = !isGenerating
                     ) {
                         if (isGenerating) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
                                 Spacer(Modifier.width(12.dp))
                                 Text("AI is thinking...")
                             }
                         } else {
-                            Text("CREATE AI QUESTIONS", fontWeight = FontWeight.Bold)
+                            Text("CREATE AI QUESTIONS", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                         }
                     }
                 }

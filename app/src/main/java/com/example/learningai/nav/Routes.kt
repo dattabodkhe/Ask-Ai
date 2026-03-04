@@ -3,7 +3,6 @@ object Routes {
     const val HOME = "home"
     const val ROLE_SELECTION = "role_selection"
     const val LOGIN = "login"
-    const val DETAILS_FORM = "details_form"
     const val CLASSROOM = "classroom"
     const val CREATE_CLASSROOM = "create_classroom"
     const val JOIN_CLASSROOM = "join_classroom"

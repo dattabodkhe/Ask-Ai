@@ -2,35 +2,35 @@ package com.example.learningai.ui.nav
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.learningai.nav.BottomNavItem
 import com.example.learningai.nav.Routes
-
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 
 @Composable
 fun BottomAppBar(
     currentRoute: String?,
     onItemClick: (String) -> Unit
 ) {
-
     Surface(
-        tonalElevation = 6.dp,
-        color = MaterialTheme.colorScheme.surface
+        tonalElevation = 8.dp,
+        shadowElevation = 10.dp,
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
     ) {
-
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(70.dp),
+                .navigationBarsPadding()
+                .height(72.dp)
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -50,7 +50,7 @@ fun BottomAppBar(
             )
 
             BottomNavItem(
-                icon = Icons.Default.Person, // You can change icon below
+                icon = Icons.Default.Face,
                 label = "Classroom",
                 selected = currentRoute == Routes.CLASSROOM,
                 onClick = { onItemClick(Routes.CLASSROOM) }

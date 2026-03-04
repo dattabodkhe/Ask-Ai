@@ -1,11 +1,7 @@
 package com.example.learningai.classroom
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.util.Log
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,35 +19,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import com.example.learningai.model.Contact
 import com.example.learningai.nav.Routes
-import com.example.learningai.premission.getContacts
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 
-/* --- MESSAGE MODEL --- */
+/* --- 1. MESSAGE MODEL (Ye zaroori hai error hatane ke liye) --- */
 data class Message(
     val text: String = "",
     val senderId: String = "",
     val senderName: String = "User",
     val timestamp: Timestamp? = null,
-    val type: String = "text",
-    val questions: List<String> = emptyList()
+    val type: String = "text"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,156 +51,179 @@ fun ClassroomChatScreen(
     val currentUser = FirebaseAuth.getInstance().currentUser
     val context = LocalContext.current
 
-    // --- STATES ---
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    var isMember by remember { mutableStateOf(false) }
     var classroomName by remember { mutableStateOf("Classroom") }
-    var inviteCode by remember { mutableStateOf("") } // New State for Invite Code
+    var inviteCode by remember { mutableStateOf("") }
     var memberCount by remember { mutableStateOf(0) }
-    var listener by remember { mutableStateOf<ListenerRegistration?>(null) }
     var showMenu by remember { mutableStateOf(false) }
-    var showAddFriendSheet by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
 
-    // --- DATA FETCHING ---
+    // FETCH CLASSROOM INFO
     LaunchedEffect(classId) {
-        try {
-            val doc = firestore.collection("classrooms").document(classId).get().await()
-            if (doc.exists()) {
-                classroomName = doc.getString("name") ?: "Classroom"
-                inviteCode = doc.getString("inviteCode") ?: "" // Fetching Invite Code
-                val members = doc.get("members") as? List<*>
-                memberCount = members?.size ?: 0
-                isMember = members?.contains(currentUser?.uid) == true
-            }
-        } catch (e: Exception) {
-            isMember = false
+        val doc = firestore.collection("classrooms").document(classId).get().await()
+        if (doc.exists()) {
+            classroomName = doc.getString("name") ?: "Classroom"
+            inviteCode = doc.getString("inviteCode") ?: ""
+            val members = doc.get("members") as? List<*>
+            memberCount = members?.size ?: 0
         }
     }
 
-    // Auto-scroll logic same rahega...
+    // 2. REAL-TIME MESSAGES LISTENER (Fixed with DisposableEffect)
+    DisposableEffect(classId) {
+        val query = firestore.collection("classrooms")
+            .document(classId)
+            .collection("messages")
+            .orderBy("timestamp", Query.Direction.ASCENDING)
 
-    /* ================= UI LAYOUT ================= */
+        val registration = query.addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null) {
+                messages = snapshot.toObjects(Message::class.java)
+            }
+        }
+
+        onDispose {
+            registration.remove()
+        }
+    }
+
+    // Auto-scroll logic
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
     Scaffold(
         topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED))),
-                        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
-                    )
-                    .statusBarsPadding()
-                    .padding(vertical = 12.dp, horizontal = 8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
-                        }
-                        Column(modifier = Modifier.clickable { navController.navigate("group_profile/$classId") }) {
-                            Text(classroomName, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text("$memberCount Members", color = Color.White.copy(0.8f), style = MaterialTheme.typography.bodySmall)
-                        }
+            CenterAlignedTopAppBar(
+                title = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.clickable { navController.navigate("group_profile/$classId") }
+                    ) {
+                        Text(classroomName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("$memberCount Members", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
-
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, null, tint = Color.White)
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Add Friend in Group") },
-                                onClick = {
-                                    showMenu = false
-                                    // Permission logic...
-                                }
-                            )
-                            // SHARE FEATURE WORKING NOW
-                            DropdownMenuItem(
-                                text = { Text("Share Classroom Link") },
-                                onClick = {
-                                    showMenu = false
-                                    // Yahan hum inviteCode bhej rahe hain
-                                    shareClassroom(context, classroomName, inviteCode)
-                                }
-                            )
-                        }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.MoreVert, null) }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(text = { Text("Invite Code: $inviteCode") }, onClick = {})
+                        DropdownMenuItem(text = { Text("Share Link") }, onClick = { shareClassroom(context, classroomName, inviteCode) })
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            Surface(tonalElevation = 8.dp) {
+                Row(
+                    modifier = Modifier.padding(12.dp).navigationBarsPadding().imePadding(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        placeholder = { Text("Type a message...") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    FloatingActionButton(
+                        onClick = {
+                            if (messageText.isNotBlank()) {
+                                val msg = Message(
+                                    text = messageText,
+                                    senderId = currentUser?.uid ?: "",
+                                    senderName = currentUser?.displayName ?: "User",
+                                    timestamp = Timestamp.now(),
+                                    type = "text"
+                                )
+                                firestore.collection("classrooms").document(classId)
+                                    .collection("messages").add(msg)
+                                messageText = ""
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
-        },
+        }
     ) { innerPadding ->
-    Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF6F7FB))
-                .padding(innerPadding)
+        Column(
+            modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background)
         ) {
             AIInviteCard(onInviteClick = {
-                navController.navigate("create_ai_question")
+                navController.navigate(Routes.CREATE_AI_QUESTION)
             })
 
             LazyColumn(
-                state = listState, // ATTACHED listState
+                state = listState,
                 modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 20.dp)
             ) {
                 items(messages) { msg ->
                     val isMe = msg.senderId == currentUser?.uid
                     MessageBubble(msg, isMe, onJoinQuiz = {
-                        navController.navigate("${Routes.QUESTIONSCREEN}/$classId/${msg.text.ifBlank { "Quiz" }}/10/MEDIUM")
+                        navController.navigate("${Routes.QUESTIONSCREEN}/$classId/${msg.text}/10/MEDIUM")
                     })
                 }
             }
         }
-        // ... (Baaki ModalBottomSheet logic same hai) ...
     }
 }
 
-/* ================= COMPONENTS ================= */
+/* --- COMPONENTS --- */
 
 @Composable
 fun MessageBubble(msg: Message, isMe: Boolean, onJoinQuiz: () -> Unit) {
     val isAiQuiz = msg.type == "ai_questions"
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
     ) {
+        if (!isMe) {
+            Text(msg.senderName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 2.dp))
+        }
+
         Surface(
             shape = RoundedCornerShape(
-                topStart = 18.dp, topEnd = 18.dp,
-                bottomStart = if (isMe) 18.dp else 4.dp,
-                bottomEnd = if (isMe) 4.dp else 18.dp
+                topStart = 16.dp, topEnd = 16.dp,
+                bottomStart = if (isMe) 16.dp else 0.dp,
+                bottomEnd = if (isMe) 0.dp else 16.dp
             ),
-            color = if (isAiQuiz) Color(0xFFEEF2FF) else (if (isMe) Color(0xFF6C5CE7) else Color.White),
-            tonalElevation = 2.dp,
-            shadowElevation = 3.dp,
-            border = if (isAiQuiz) BorderStroke(1.dp, Color(0xFF4F46E5)) else null
+            color = if (isAiQuiz) MaterialTheme.colorScheme.primaryContainer else (if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+            tonalElevation = 2.dp
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 if (isAiQuiz) {
-                    Text("🤖 AI QUIZ CHALLENGE", fontWeight = FontWeight.ExtraBold, color = Color(0xFF4F46E5), fontSize = 13.sp)
-                    Spacer(Modifier.height(4.dp))
-                    Text("Subject: ${msg.text.ifBlank { "General AI Quiz" }}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🤖", fontSize = 20.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Text("AI QUIZ CHALLENGE", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("Subject: ${msg.text}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.height(12.dp))
-                    Button(
-                        onClick = onJoinQuiz,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
-                    ) {
-                        Text("JOIN QUIZ", fontWeight = FontWeight.Bold)
+                    Button(onClick = onJoinQuiz, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                        Text("START QUIZ", fontWeight = FontWeight.Bold)
                     }
                 } else {
-                    Text(text = msg.text, color = if (isMe) Color.White else Color.Black)
+                    Text(text = msg.text, color = if (isMe) Color.White else MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
@@ -224,63 +234,31 @@ fun MessageBubble(msg: Message, isMe: Boolean, onJoinQuiz: () -> Unit) {
 fun AIInviteCard(onInviteClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { onInviteClick() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(6.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(48.dp).background(Color(0xFFEEF2FF), CircleShape),
-                contentAlignment = Alignment.Center
-            ) { Text("🤖", fontSize = 24.sp) }
-            Spacer(Modifier.width(16.dp))
+            Surface(modifier = Modifier.size(44.dp), shape = CircleShape, color = MaterialTheme.colorScheme.secondary) {
+                Box(contentAlignment = Alignment.Center) { Text("✨", fontSize = 20.sp) }
+            }
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("AI Quiz Challenge 💡", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("Generate quiz for this group", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text("Generate AI Quiz", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Post a challenge for everyone", style = MaterialTheme.typography.labelSmall)
             }
-            Button(onClick = onInviteClick, shape = RoundedCornerShape(12.dp)) {
-                Text("Create", fontSize = 12.sp)
-            }
+            Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
 
-@Composable
-fun AddFriendSheetContent(
-    contacts: List<Contact>,
-    selected: Set<String>,
-    onToggle: (String) -> Unit,
-    onDone: () -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-        Text("Select Friends", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
-        LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-            items(contacts) { contact ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onToggle(contact.number) }.padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(checked = selected.contains(contact.number), onCheckedChange = null)
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(contact.name, fontWeight = FontWeight.Bold)
-                        Text(contact.number, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        }
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-            Text("Add Selected to Group")
-        }
-    }
-}
-fun shareClassroom(context: android.content.Context, name: String, id: String) {
-    val sendIntent: android.content.Intent = android.content.Intent().apply {
-        action = android.content.Intent.ACTION_SEND
-        putExtra(android.content.Intent.EXTRA_TEXT, "Join my Classroom '$name' on LearningAI! \nLink: https://learningai.app/join/$id")
+/* SHARE FUNCTION (Ye missing tha code mein) */
+fun shareClassroom(context: Context, name: String, code: String) {
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, "Join my Classroom '$name' using code: $code")
         type = "text/plain"
     }
-    val shareIntent = android.content.Intent.createChooser(sendIntent, null)
+    val shareIntent = Intent.createChooser(sendIntent, null)
     context.startActivity(shareIntent)
 }

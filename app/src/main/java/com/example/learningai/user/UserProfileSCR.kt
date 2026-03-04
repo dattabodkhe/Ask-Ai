@@ -1,12 +1,10 @@
 package com.example.learningai.user
 
 import android.util.Log
-import androidx.compose.foundation.background
+import androidx.compose.animation.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -14,16 +12,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
 import com.example.learningai.nav.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,289 +29,286 @@ fun UserProfileSCR(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
     val currentUser = auth.currentUser
+    val scope = rememberCoroutineScope()
 
-    // --- States ---
+    // Data States
     var userData by remember { mutableStateOf<Map<String, Any>?>(null) }
     var questionsSolved by remember { mutableIntStateOf(0) }
     var groupsJoined by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
-    var menuExpanded by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // --- Data Fetching ---
+    // UI Interaction States
+    var showMenu by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showEditSheet by remember { mutableStateOf(false) }
+    var isUpdating by remember { mutableStateOf(false) }
+
+    // Form States (for editing)
+    var collegeName by remember { mutableStateOf("") }
+    var universityName by remember { mutableStateOf("") }
+    var stateName by remember { mutableStateOf("") }
+
+    // Fetch Data from Firestore
     LaunchedEffect(currentUser?.uid) {
         if (currentUser != null) {
             try {
                 val userDoc = firestore.collection("users").document(currentUser.uid).get().await()
                 userData = userDoc.data
 
-                val questionSnapshot = firestore.collectionGroup("messages")
-                    .whereEqualTo("senderId", currentUser.uid)
-                    .whereEqualTo("type", "ai_questions")
-                    .get().await()
-                questionsSolved = questionSnapshot.size()
+                // Initialize form values
+                collegeName = userData?.get("collegeName")?.toString() ?: ""
+                universityName = userData?.get("universityName")?.toString() ?: ""
+                stateName = userData?.get("state")?.toString() ?: ""
 
                 val groupSnapshot = firestore.collection("classrooms")
-                    .whereArrayContains("members", currentUser.uid)
-                    .get().await()
+                    .whereArrayContains("members", currentUser.uid).get().await()
                 groupsJoined = groupSnapshot.size()
+            } catch (e: Exception) { Log.e("PROFILE", "Error: ${e.message}") }
+            finally { isLoading = false }
+        }
+    }
 
-            } catch (e: Exception) {
-                Log.e("PROFILE", "Error fetching profile: ${e.message}")
-            } finally {
-                isLoading = false
+    val rankInfo = when {
+        questionsSolved >= 100 -> Pair("Pro Player", "Elite league member! 🏆")
+        questionsSolved >= 10 -> Pair("Player", "Kafi sahi khel rahe ho! 🎮")
+        else -> Pair("Newbie", "Abhi toh game shuru hua hai! 🚀")
+    }
+    val (rank, badgeDesc) = rankInfo
+
+    if (isLoading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+    } else {
+        Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState())) {
+
+            /* --- HEADER SECTION --- */
+            Box(
+                modifier = Modifier.fillMaxWidth().height(320.dp)
+                    .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)),
+                        shape = RoundedCornerShape(bottomStart = 35.dp, bottomEnd = 35.dp))
+            ) {
+                Row(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+                    Text("My Profile", color = Color.White, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+
+                    // Settings Dropdown Menu
+                    Box {
+                        IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.Settings, null, tint = Color.White) }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface).width(180.dp)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Settings") },
+                                leadingIcon = { Icon(Icons.Default.Settings, null, modifier = Modifier.size(20.dp)) },
+                                onClick = { showMenu = false; navController.navigate(Routes.SETTINGS) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Privacy Policy") },
+                                leadingIcon = { Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp)) },
+                                onClick = { showMenu = false; navController.navigate(Routes.PRIVACY_POLICY) }
+                            )
+                            Divider(Modifier.padding(vertical = 4.dp))
+                            DropdownMenuItem(
+                                text = { Text("Logout", color = Color.Red) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, null, tint = Color.Red) },
+                                onClick = { showMenu = false; showLogoutDialog = true }
+                            )
+                        }
+                    }
+                }
+
+                Column(modifier = Modifier.align(Alignment.Center).padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val name = userData?.get("name")?.toString() ?: "User"
+                    val role = userData?.get("role")?.toString() ?: "SELF"
+
+                    Surface(
+                        shape = CircleShape, modifier = Modifier.size(100.dp),
+                        color = Color.White.copy(alpha = 0.2f),
+                        border = BorderStroke(2.dp, Color.White)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(name.take(1).uppercase(), fontSize = 48.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(name, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Surface(color = Color.White.copy(0.2f), shape = RoundedCornerShape(50)) {
+                        Text(role, color = Color.White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+
+            /* --- STATS SECTION --- */
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).offset(y = (-40).dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ProfileStatCard("Solved", questionsSolved.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                ProfileStatCard("Groups", groupsJoined.toString(), MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
+            }
+
+            /* --- DETAILS CARD --- */
+            Column(modifier = Modifier.padding(horizontal = 16.dp).offset(y = (-20).dp)) {
+                WhiteCard {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Institution Details", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        TextButton(onClick = { showEditSheet = true }) {
+                            Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Edit Info", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
+                    InfoRow(Icons.Default.Home, "Institution", userData?.get("collegeName")?.toString() ?: "Not Available")
+                    InfoRow(Icons.Default.LocationOn, "Location", "${userData?.get("state")}, ${userData?.get("country") ?: "India"}")
+                    InfoRow(Icons.Default.AccountCircle, "University", userData?.get("universityName")?.toString() ?: "N/A")
+                }
+
+                WhiteCard {
+                    Text("Achievement Badge", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    AchievementRow(rank, badgeDesc, questionsSolved)
+                }
+
+                /* --- LOGOUT CARD --- */
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).clickable { showLogoutDialog = true },
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                ) {
+                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.error.copy(0.1f), modifier = Modifier.size(45.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ExitToApp, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp))
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Logout Session", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            Text("Aapko firse login karna padega", fontSize = 12.sp, color = MaterialTheme.colorScheme.error.copy(0.7f))
+                        }
+                        Icon(Icons.Default.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
         }
     }
 
+    /* --- EDIT SHEET (Modal Bottom Sheet) --- */
+    if (showEditSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showEditSheet = false },
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp).fillMaxWidth().navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Update Information ✏️", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+
+                OutlinedTextField(
+                    value = collegeName, onValueChange = { collegeName = it },
+                    label = { Text("College Name") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.Home, null) }
+                )
+                OutlinedTextField(
+                    value = universityName, onValueChange = { universityName = it },
+                    label = { Text("University Name") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.AccountCircle, null) }
+                )
+                OutlinedTextField(
+                    value = stateName, onValueChange = { stateName = it },
+                    label = { Text("State / Location") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.LocationOn, null) }
+                )
+
+                Button(
+                    onClick = {
+                        isUpdating = true
+                        val updates = mapOf(
+                            "collegeName" to collegeName,
+                            "universityName" to universityName,
+                            "state" to stateName
+                        )
+                        currentUser?.uid?.let { uid ->
+                            firestore.collection("users").document(uid).update(updates)
+                                .addOnSuccessListener {
+                                    isUpdating = false
+                                    showEditSheet = false
+                                    userData = userData?.toMutableMap()?.apply { putAll(updates) }
+                                }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = !isUpdating
+                ) {
+                    if (isUpdating) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    else Text("Save Changes", fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
+
+    /* --- DIALOGS --- */
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout", fontWeight = FontWeight.Bold) },
-            text = { Text("Bhai, logout karna hai?") },
+            title = { Text("Confirm Logout") },
+            text = { Text("Kya aap sach me logout karna chahte hain?") },
             confirmButton = {
                 Button(onClick = {
-                    showLogoutDialog = false
                     auth.signOut()
-                    navController.navigate(Routes.ROLE_SELECTION) { popUpTo(0) { inclusive = true } }
-                }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
-                    Text("Logout", color = Color.White)
+                    navController.navigate(Routes.ROLE_SELECTION) { popUpTo(0) }
+                }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+                    Text("Logout")
                 }
             },
             dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("Cancel") } }
         )
     }
-
-    // --- Police Rank Logic ---
-    val (rank, badgeDesc) = when {
-        questionsSolved >= 1000 -> "DGP" to "Learning ke supreme head! 👮‍♂️💎"
-        questionsSolved >= 500 -> "Commissioner" to "City aapke control mein hai! 🏛️"
-        questionsSolved >= 200 -> "S.P." to "Expert problem solver! 🚔"
-        questionsSolved >= 100 -> "Inspector" to "Aapka dimag tez chalta hai! 🔍"
-        questionsSolved >= 50 -> "Sub-Inspector" to "Consistency ka power! ⭐⭐"
-        questionsSolved >= 10 -> "Constable" to "Duty par tainaat! 🛡️"
-        else -> "Trainee" to "Pehle 10 sawal solve karke Constable bano! 🏫"
-    }
-
-    val purpleGradient = Brush.verticalGradient(listOf(Color(0xFF9C27B0), Color(0xFF673AB7)))
-
-    if (isLoading) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF673AB7))
-        }
-    } else {
-        Column(
-            modifier = Modifier.fillMaxSize().background(Color(0xFFF3F4F6)).verticalScroll(rememberScrollState())
-        ) {
-            /* --- Header Section (Fixed Padding) --- */
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .background(purpleGradient, shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            ) {
-                // Top Bar (Back Arrow, Title & Menu)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
-                    }
-                    Text(
-                        "My Profile",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f).padding(start = 8.dp)
-                    )
-
-                    // --- MENU OPTIONS ---
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.MoreVert, null, tint = Color.White)
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            // 1. SETTINGS (Naya Option)
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Settings, null, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Settings")
-                                    }
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    navController.navigate(Routes.SETTINGS) // Shortcut settings screen par jane ke liye
-                                }
-                            )
-
-                            // 2. PRIVACY POLICY
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Privacy Policy")
-                                    }
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    navController.navigate(Routes.PRIVACY_POLICY)
-                                }
-                            )
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                            // 3. LOGOUT
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Delete, null, tint = Color.Red, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Logout", color = Color.Red)
-                                    }
-                                },
-                                onClick = { menuExpanded = false; showLogoutDialog = true }
-                            )
-                        }
-                    }
-                }
-
-                // Center Content (Avatar & Name)
-                Column(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 45.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val name = userData?.get("name")?.toString() ?: "User"
-                    // Profile Circle with Dynamic First Letter
-                    Surface(
-                        shape = CircleShape,
-                        modifier = Modifier.size(85.dp),
-                        color = Color.White,
-                        shadowElevation = 8.dp
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = name.trim().firstOrNull()?.uppercase() ?: "U",
-                                fontSize = 38.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF673AB7)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Text(name, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text(userData?.get("role")?.toString() ?: "Student", color = Color.White.copy(0.7f), fontSize = 14.sp)
-                }
-            }
-
-            /* --- Stats Section --- */
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).offset(y = (-30).dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ProfileStatCard("Solved", questionsSolved.toString(), Color(0xFF9C27B0))
-                ProfileStatCard("Groups", groupsJoined.toString(), Color(0xFF673AB7))
-                ProfileStatCard("Rank", rank, Color(0xFFF97316))
-            }
-
-            /* --- Institution Details --- */
-            WhiteCard(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Institution Details", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1F2937))
-                Spacer(Modifier.height(16.dp))
-                InfoRow(Icons.Default.Home, "College", userData?.get("collegeName")?.toString() ?: "Not Set")
-                InfoRow(Icons.Default.LocationOn, "Location", "${userData?.get("state") ?: "N/A"}, ${userData?.get("country") ?: "N/A"}")
-                InfoRow(Icons.Default.Email, "Email", currentUser?.email ?: "No Email")
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            /* --- Achievements Section --- */
-            WhiteCard(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text("Department Status", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1F2937))
-                Spacer(Modifier.height(12.dp))
-                AchievementRow(rank, badgeDesc, questionsSolved)
-            }
-            Spacer(Modifier.height(40.dp))
-        }
-    }
 }
-/* --- Helpers --- */
+
+/* --- REUSABLE UI COMPONENTS --- */
 
 @Composable
-fun ProfileStatCard(label: String, value: String, textColor: Color) {
-    Card(
-        modifier = Modifier.size(width = 100.dp, height = 90.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(8.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = textColor)
-            Text(label, fontSize = 12.sp, color = Color.Gray)
+fun ProfileStatCard(label: String, value: String, textColor: Color, modifier: Modifier = Modifier) {
+    Card(modifier = modifier.height(100.dp), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(8.dp)) {
+        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = textColor)
+            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
-fun WhiteCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
+fun WhiteCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.4f)), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.5f))) {
         Column(modifier = Modifier.padding(20.dp), content = content)
     }
 }
 
 @Composable
 fun InfoRow(icon: ImageVector, title: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(shape = CircleShape, color = Color(0xFFF3E5F5), modifier = Modifier.size(36.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = Color(0xFF673AB7), modifier = Modifier.size(18.dp))
-            }
-        }
-        Spacer(Modifier.width(16.dp))
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(12.dp))
         Column {
-            Text(title, fontSize = 12.sp, color = Color.Gray)
-            Text(value, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1F2937))
+            Text(title, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }
     }
 }
 
 @Composable
 fun AchievementRow(title: String, subtitle: String, count: Int) {
-    val iconColor = when {
-        count >= 750 -> Color(0xFFFFD700) // Gold
-        count >= 250 -> Color(0xFFC0C0C0) // Silver
-        else -> Color(0xFFCD7F32)        // Bronze
-    }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Default.AccountBox, null, tint = iconColor, modifier = Modifier.size(45.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(modifier = Modifier.size(50.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(if (count > 50) 0.3f else 0.1f)) {
+            Icon(Icons.Default.Star, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(12.dp))
+        }
         Spacer(Modifier.width(16.dp))
         Column {
-            Text(title, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF1F2937))
-            Text(subtitle, fontSize = 14.sp, color = Color.Gray, lineHeight = 18.sp)
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(subtitle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -25,32 +25,35 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.learningai.MVVM.ChatViewModel
 import com.example.learningai.MVVM.ChatViewModelFactory
+import com.example.learningai.localDB.ChatMessageEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-// ... (Top imports same rahenge)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserInputSCR(
     navController: NavHostController,
-    viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(LocalContext.current))
+    viewModel: ChatViewModel = viewModel(
+        factory = ChatViewModelFactory(LocalContext.current)
+    )
 ) {
     val state by viewModel.uiState.collectAsState()
-    val historyGroups by viewModel.groupedHistory.collectAsState(initial = emptyMap())
+
+    // ✅ FIXED GENERIC TYPE
+    val historyGroups by viewModel.groupedHistory
+        .collectAsState(initial = emptyMap<Long, List<ChatMessageEntity>>())
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var userText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // Auto-scroll logic
     LaunchedEffect(state.messages.size) {
         if (state.messages.isNotEmpty()) {
             listState.animateScrollToItem(state.messages.size - 1)
         }
     }
 
-    // Drawer wrapper
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -58,19 +61,35 @@ fun UserInputSCR(
                 modifier = Modifier.width(320.dp),
                 drawerContainerColor = Color(0xFFF6F7FB)
             ) {
-                // Drawer Header
+
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(150.dp)
-                        .background(Brush.horizontalGradient(listOf(Color(0xFF3B5BFF), Color(0xFF8A3FFC))))
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF3B5BFF), Color(0xFF8A3FFC))
+                            )
+                        )
                         .padding(20.dp),
                     contentAlignment = Alignment.BottomStart
                 ) {
-                    Text("History", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "History",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
-                // New Chat Button
                 NavigationDrawerItem(
-                    label = { Text("+ New Chat", fontWeight = FontWeight.Bold, color = Color(0xFF3B5BFF)) },
+                    label = {
+                        Text(
+                            "+ New Chat",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF3B5BFF)
+                        )
+                    },
                     selected = false,
                     onClick = {
                         viewModel.startNewChat()
@@ -78,22 +97,43 @@ fun UserInputSCR(
                     },
                     modifier = Modifier.padding(8.dp)
                 )
+
                 HorizontalDivider()
 
-                // History Sessions List
                 LazyColumn(modifier = Modifier.padding(8.dp)) {
+
                     items(historyGroups.keys.toList().sortedDescending()) { sessionId ->
-                        val sessionMessages = historyGroups[sessionId] ?: emptyList()
-                        val title = sessionMessages.firstOrNull { it.isUser }?.text ?: "Purani Chat"
+
+                        val sessionMessages =
+                            historyGroups[sessionId] ?: emptyList()
+
+                        val title =
+                            sessionMessages.firstOrNull { it.isUser }?.text
+                                ?: "Purani Chat"
 
                         NavigationDrawerItem(
-                            label = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = {
+                                Text(
+                                    title,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
                             selected = false,
                             onClick = {
-                                viewModel.loadSession(sessionId, sessionMessages)
+                                viewModel.loadSession(
+                                    sessionId,
+                                    sessionMessages
+                                )
                                 scope.launch { drawerState.close() }
                             },
-                            icon = { Icon(Icons.Default.Menu, null, tint = Color(0xFF8A3FFC)) },
+                            icon = {
+                                Icon(
+                                    Icons.Default.Menu,
+                                    null,
+                                    tint = Color(0xFF8A3FFC)
+                                )
+                            },
                             modifier = Modifier.padding(vertical = 2.dp)
                         )
                     }
@@ -101,7 +141,7 @@ fun UserInputSCR(
             }
         }
     ) {
-        // Main Screen Scaffold inside Drawer
+
         Scaffold(
             topBar = {
                 AiChatHeader(
@@ -110,24 +150,31 @@ fun UserInputSCR(
                 )
             }
         ) { paddingValues ->
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
                     .background(Color(0xFFF6F7FB))
             ) {
-                // Messages List
+
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+
                     items(state.messages) { msg ->
+
                         if (msg.isUser) {
                             UserBubble(msg.text)
                         } else {
-                            val isLast = state.messages.lastOrNull() == msg
+                            val isLast =
+                                state.messages.lastOrNull() == msg
+
                             if (isLast && !state.isTyping) {
                                 AiStreamingBubble(msg.text, listState)
                             } else {
@@ -135,12 +182,12 @@ fun UserInputSCR(
                             }
                         }
                     }
+
                     if (state.isTyping) {
                         item { TypingIndicator() }
                     }
                 }
 
-                // Input Bar at bottom
                 ChatInputBar(
                     text = userText,
                     onTextChange = { userText = it },

@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-
 import com.example.learningai.MVVM.AuthViewModel
 import com.example.learningai.ui.nav.BottomAppBar
 import com.example.learningai.ui.splash.LearningAISplash
@@ -17,7 +16,6 @@ import com.example.learningai.ui.splash.LearningAISplash
 fun MainScreen(
     authViewModel: AuthViewModel
 ) {
-
     var showSplash by remember { mutableStateOf(true) }
 
     if (showSplash) {
@@ -29,9 +27,9 @@ fun MainScreen(
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
+        // FIX: DETAILS_FORM hata diya gaya hai kyunki wo Routes file ya NavGraph mein nahi hai
         val hideBars = currentRoute?.startsWith(Routes.LOGIN) == true ||
                 currentRoute == Routes.ROLE_SELECTION ||
-                currentRoute?.startsWith(Routes.DETAILS_FORM) == true ||
                 currentRoute?.startsWith(Routes.QUESTIONSCREEN) == true
 
         Scaffold(
