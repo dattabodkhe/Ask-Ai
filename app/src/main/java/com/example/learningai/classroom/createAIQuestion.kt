@@ -1,0 +1,197 @@
+package com.example.learningai.classroom
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.learningai.model.Difficulty
+import com.example.learningai.nav.Routes
+import java.util.UUID
+
+import android.net.Uri
+import androidx.compose.ui.text.font.FontWeight
+import com.google.gson.Gson
+
+// ... existing imports ...
+import kotlinx.coroutines.delay // Add this for simulation
+import kotlinx.coroutines.launch
+
+// ... baki saare imports same rahenge ...
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateAIquestion(
+    navController: NavController
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var questionCount by remember { mutableStateOf("") }
+    var selectedSubject by remember { mutableStateOf("") }
+    var difficulty by remember { mutableStateOf(Difficulty.EASY) }
+    var isGenerating by remember { mutableStateOf(false) }
+
+    var subjectError by remember { mutableStateOf(false) }
+    var subjectErrorMessage by remember { mutableStateOf("") }
+    var countError by remember { mutableStateOf(false) }
+    var showOptions by remember { mutableStateOf(false) }
+
+    fun validateForm(): Boolean {
+        val input = selectedSubject.trim()
+        val count = questionCount.toIntOrNull()
+        val isValidText = input.matches(Regex("^[a-zA-Z\\s]{3,25}$"))
+        val isSpam = input.length > 2 && input.all { it.lowercaseChar() == input[0].lowercaseChar() }
+
+        var isAllValid = true
+        if (input.isBlank() || !isValidText || isSpam) {
+            subjectErrorMessage = "Invalid subject! Please use real words."
+            subjectError = true
+            isAllValid = false
+        } else { subjectError = false }
+
+        if (count == null || count !in 1..50) {
+            countError = true
+            isAllValid = false
+        } else { countError = false }
+
+        return isAllValid
+    }
+
+    // --- Navigation Dialog ---
+    if (showOptions) {
+        AlertDialog(
+            onDismissRequest = { showOptions = false },
+            title = { Text("Questions Ready! 🤖") },
+            text = { Text("AI has generated the questions. What's the next step?") },
+
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showOptions = false
+                        val dummyQuestions = listOf(
+                            "What is $selectedSubject?",
+                            "Explain the importance of $selectedSubject.",
+                            "Describe a key concept in $selectedSubject."
+                        )
+                        val jsonString = Gson().toJson(dummyQuestions)
+                        val encodedJson = Uri.encode(jsonString)
+
+                        navController.navigate("${Routes.PREVIEW_QUESTIONS}/TEMP_ID/$encodedJson")
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                ) { Text("Send in Classroom") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showOptions = false
+                    val selfId = "SELF_${UUID.randomUUID()}"
+                    navController.navigate("${Routes.QUESTIONSCREEN}/$selfId/${selectedSubject.trim()}/${questionCount.trim()}/${difficulty.name}")
+                }) { Text("Self Practice") }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    /* -------- UI LAYOUT -------- */
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFFF6F7FB))))
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            /* Header */
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 60.dp, start = 24.dp, end = 24.dp)) {
+                Text("Create Powerful Questions 💡", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                Spacer(Modifier.height(6.dp))
+                Text("Push your limits. Let AI boost your learning 🚀", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+            }
+
+            Spacer(Modifier.height(40.dp))
+
+            /* Card */
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Generate AI Questions 🤖", style = MaterialTheme.typography.headlineSmall)
+
+                    OutlinedTextField(
+                        value = selectedSubject,
+                        onValueChange = { selectedSubject = it; if (subjectError) subjectError = false },
+                        label = { Text("Subject Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        isError = subjectError,
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        supportingText = { if (subjectError) Text(text = subjectErrorMessage, color = MaterialTheme.colorScheme.error) },
+                        enabled = !isGenerating
+                    )
+
+                    OutlinedTextField(
+                        value = questionCount,
+                        onValueChange = { if (it.all { char -> char.isDigit() }) { questionCount = it; if (countError) countError = false } },
+                        label = { Text("Questions (1-50)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        isError = countError,
+                        supportingText = { if (countError) Text(text = "Enter 1-50", color = MaterialTheme.colorScheme.error) },
+                        enabled = !isGenerating
+                    )
+
+                    Text("Difficulty", style = MaterialTheme.typography.labelLarge)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Difficulty.entries.forEach { level ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = difficulty == level, onClick = { if(!isGenerating) difficulty = level }, enabled = !isGenerating)
+                                Text(level.name)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    /* ACTION BUTTON */
+                    Button(
+                        onClick = {
+                            if (validateForm()) {
+                                isGenerating = true
+                                scope.launch {
+                                    delay(3000) // AI thinking simulation
+                                    isGenerating = false
+                                    showOptions = true
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C5CE7)),
+                        enabled = !isGenerating
+                    ) {
+                        if (isGenerating) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Text("AI is thinking...")
+                            }
+                        } else {
+                            Text("CREATE AI QUESTIONS", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

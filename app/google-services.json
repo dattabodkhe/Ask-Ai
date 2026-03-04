@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "287574383586",
+    "project_id": "learningai-4ddfd",
+    "storage_bucket": "learningai-4ddfd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287574383586:android:2f3ecee5b01033898ef7bb",
+        "android_client_info": {
+          "package_name": "com.example.learningai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287574383586-p0pri07sjndggqeidmaaran8cs3hm7nb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.learningai",
+            "certificate_hash": "9c2d409392ad518770e98cac5fec9e654a5e8019"
+          }
+        },
+        {
+          "client_id": "287574383586-mmsu1kt9itqecccl9foq2pqq1cus4g0m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdrP4S6fqrPFDRBvta6bqs-_U0kl84XFA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287574383586-mmsu1kt9itqecccl9foq2pqq1cus4g0m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
