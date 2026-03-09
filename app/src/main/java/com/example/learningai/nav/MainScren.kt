@@ -23,19 +23,20 @@ fun MainScreen(
             showSplash = false
         })
     } else {
+
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
-        // FIX: DETAILS_FORM hata diya gaya hai kyunki wo Routes file ya NavGraph mein nahi hai
-        val hideBars = currentRoute?.startsWith(Routes.LOGIN) == true ||
-                currentRoute == Routes.ROLE_SELECTION ||
-                currentRoute?.startsWith(Routes.QUESTIONSCREEN) == true
+        val showBottomBar =
+            currentRoute == Routes.HOME ||
+                    currentRoute == Routes.CLASSROOM ||
+                    currentRoute == Routes.USER_PROFILE
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
-                if (!hideBars) {
+                if (showBottomBar) {
                     BottomAppBar(
                         currentRoute = currentRoute,
                         onItemClick = { route ->
@@ -55,7 +56,7 @@ fun MainScreen(
         ) { paddingValues ->
             AppNavGraph(
                 navController = navController,
-                paddingValues = if (hideBars) PaddingValues(0.dp) else paddingValues
+                paddingValues = if (showBottomBar) paddingValues else PaddingValues(0.dp)
             )
         }
     }

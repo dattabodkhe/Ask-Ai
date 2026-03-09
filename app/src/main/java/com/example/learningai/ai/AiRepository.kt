@@ -92,6 +92,7 @@ class AiRepository(private val context: Context) {
     }
 
     // --- Question Generation ---
+    // AiRepository.kt ke andar is function ko update karein
     suspend fun generateAndSaveQuestions(
         classroomId: String,
         subject: String,
@@ -99,15 +100,19 @@ class AiRepository(private val context: Context) {
         dao: QuestionDao
     ) {
         try {
-            // "JSON" word in prompt is MANDATORY for Groq JSON mode
+            // AI ko specific instructions dena zarurat hai taaki parsing fail na ho
             val prompt = """
-                Generate $count multiple choice questions for "$subject" in JSON format.
-                Return ONLY a JSON array of objects. 
-                Structure: [{"question":"", "options":["","","",""], "correctIndex":0}]
-            """.trimIndent()
+            Generate exactly $count multiple choice questions for the subject '$subject'.
+            The output must be a valid JSON object with a key "questions" containing an array of question objects.
+            Each object must have: "question", "options" (array of 4 strings), and "correctIndex" (0-3).
+            Example: {"questions": [{"question": "...", "options": ["...", "...", "...", "..."], "correctIndex": 0}]}
+        """.trimIndent()
 
             val request = GroqRequest(
-                messages = listOf(GroqMessage("user", prompt)),
+                messages = listOf(
+                    GroqMessage("system", "You are a quiz generator. Output ONLY JSON."),
+                    GroqMessage("user", prompt)
+                ),
                 responseFormat = ResponseFormat("json_object")
             )
 
@@ -115,20 +120,16 @@ class AiRepository(private val context: Context) {
             val rawJson = response.choices.firstOrNull()?.message?.content?.trim() ?: ""
 
             if (rawJson.isNotEmpty()) {
-                val questions: List<AiQuestion> = try {
-                    val type = object : TypeToken<List<AiQuestion>>() {}.type
-                    if (rawJson.startsWith("[")) {
-                        Gson().fromJson(rawJson, type)
-                    } else {
-                        // Handle if Groq wraps JSON in a key like {"questions": [...]}
-                        val jsonObject = Gson().fromJson(rawJson, JsonObject::class.java)
-                        val key = jsonObject.keySet().firstOrNull() ?: ""
-                        Gson().fromJson(jsonObject.get(key), type)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Parse Error: ${e.message}")
-                    emptyList()
+                val jsonObject = Gson().fromJson(rawJson, JsonObject::class.java)
+                // Groq usually wraps in a root object, so we find the array
+                val jsonArray = if (jsonObject.has("questions")) {
+                    jsonObject.getAsJsonArray("questions")
+                } else {
+                    jsonObject.getAsJsonArray(jsonObject.keySet().first())
                 }
+
+                val type = object : TypeToken<List<AiQuestion>>() {}.type
+                val questions: List<AiQuestion> = Gson().fromJson(jsonArray, type)
 
                 val entities = questions.map {
                     QuestionEntity(
@@ -142,10 +143,9 @@ class AiRepository(private val context: Context) {
                     )
                 }
                 dao.insertAll(entities)
-                Log.d(TAG, "Success: ${entities.size} questions saved.")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Quiz Error: ${e.message}")
+            Log.e("AI_DEBUG", "Quiz Error: ${e.message}")
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -48,7 +49,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("role") { type = NavType.StringType })
         ) {
             LoginRoute(
-                authViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                authViewModel = viewModel(),
                 onLoginSuccess = {
                     navController.navigate(Routes.HOME) {
                         popUpTo(0) { inclusive = true }
@@ -77,6 +78,10 @@ fun AppNavGraph(
 
         composable(Routes.JOIN_CLASSROOM) {
             JoinClassroomScreen(navController)
+        }
+
+        composable(Routes.CREATE_CLASSROOM) {
+            CreateClassroomSCR(navController)
         }
 
         composable(
@@ -112,9 +117,9 @@ fun AppNavGraph(
             val subject =
                 backStackEntry.arguments?.getString("subject") ?: ""
             val count =
-                backStackEntry.arguments?.getInt("count") ?: 0
+                backStackEntry.arguments?.getInt("count") ?: 10
             val difficulty =
-                backStackEntry.arguments?.getString("difficulty") ?: ""
+                backStackEntry.arguments?.getString("difficulty") ?: "MEDIUM"
 
             QuestionsScreen(
                 navController = navController,
@@ -185,26 +190,50 @@ fun AppNavGraph(
             CreateAIquestion(navController)
         }
 
+        /* ---------------- PREVIEW QUESTIONS (NEW) ---------------- */
         composable(
-            route = "${Routes.SELECT_CLASSROOM}/{questionsJson}",
+            route = "${Routes.PREVIEW_QUESTIONS}/{selectedClassId}/{subjectName}/{count}/{difficulty}",
             arguments = listOf(
-                navArgument("questionsJson") { type = NavType.StringType }
+                navArgument("selectedClassId") { type = NavType.StringType },
+                navArgument("subjectName") { type = NavType.StringType },
+                navArgument("count") { type = NavType.IntType },
+                navArgument("difficulty") { type = NavType.StringType }
             )
         ) { entry ->
-            val json = entry.arguments?.getString("questionsJson") ?: ""
-            SelectClassroomScreen(navController, json)
+            val classId = entry.arguments?.getString("selectedClassId") ?: "TEMP_ID"
+            val subject = entry.arguments?.getString("subjectName") ?: ""
+            val count = entry.arguments?.getInt("count") ?: 5
+            val difficulty = entry.arguments?.getString("difficulty") ?: "EASY"
+
+            PreviewQuestionsScreen(
+                navController = navController,
+                selectedClassId = classId,
+                subjectName = subject,
+                count = count,
+                difficulty = difficulty
+            )
         }
 
+        /* ---------------- SELECT CLASSROOM ---------------- */
+
         composable(
-            route = "${Routes.PREVIEW_QUESTIONS}/{classId}/{questionsJson}",
+            route = "${Routes.SELECT_CLASSROOM}/{subject}/{count}/{difficulty}",
             arguments = listOf(
-                navArgument("classId") { type = NavType.StringType },
-                navArgument("questionsJson") { type = NavType.StringType }
+                navArgument("subject") { type = NavType.StringType },
+                navArgument("count") { type = NavType.IntType },
+                navArgument("difficulty") { type = NavType.StringType }
             )
         ) { entry ->
-            val classId = entry.arguments?.getString("classId") ?: ""
-            val json = entry.arguments?.getString("questionsJson") ?: ""
-            PreviewQuestionsScreen(navController, classId, json)
+            val subject = entry.arguments?.getString("subject") ?: ""
+            val count = entry.arguments?.getInt("count") ?: 10
+            val difficulty = entry.arguments?.getString("difficulty") ?: "MEDIUM"
+
+            SelectClassroomScreen(
+                navController = navController,
+                subject = subject,
+                count = count,
+                difficulty = difficulty
+            )
         }
     }
 }

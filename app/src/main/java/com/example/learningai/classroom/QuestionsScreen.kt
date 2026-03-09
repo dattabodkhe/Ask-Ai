@@ -24,6 +24,7 @@ import androidx.navigation.NavController
 import com.example.learningai.MVVM.QuestionsViewModel
 import com.example.learningai.localDB.AppDatabase
 import com.example.learningai.nav.Routes
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 @Composable
@@ -39,10 +40,12 @@ fun QuestionsScreen(
     val viewModel: QuestionsViewModel = viewModel(factory = QuestionsViewModelFactory(context))
     val state by viewModel.uiState.collectAsState()
 
+    // 1. Load Questions
     LaunchedEffect(classroomId, subject, count) {
         viewModel.loadOrGenerateQuestions(classroomId, subject, count, dao)
     }
 
+    // 2. Timer Logic
     var timeLeft by remember { mutableIntStateOf(count * 60) }
     LaunchedEffect(state.questions.isNotEmpty()) {
         if (state.questions.isNotEmpty()) {
@@ -55,104 +58,94 @@ fun QuestionsScreen(
 
     val timeString = String.format("%02d:%02d", timeLeft / 60, timeLeft % 60)
 
+    // Loading State
     if (state.isLoading && state.questions.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(16.dp))
+                Text("AI is generating your quiz...", color = MaterialTheme.colorScheme.primary)
+            }
         }
         return
     }
 
     if (state.questions.isEmpty()) return
     val question = state.questions[state.index]
-
-    // Theme Based Gradient
-    val quizGradient = Brush.verticalGradient(
-        colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
-    )
+    val quizGradient = Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.background,
-                tonalElevation = 8.dp
-            ) {
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp, top = 16.dp)) {
+            Surface(tonalElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp).navigationBarsPadding()) {
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
                     Button(
                         onClick = {
+                            // Final Score update sirf Next click par logic (Optional, aapka purana logic bhi chalega)
                             if (state.index < state.questions.lastIndex) {
                                 viewModel.nextQuestion()
                             } else {
-                                navController.navigate("${Routes.RESULT}/$classroomId/${state.score}/${state.questions.size}")
+                                navController.navigate(
+                                    Routes.resultRoute(classroomId, state.score, state.questions.size, userId)
+                                ) { popUpTo(Routes.QUESTIONSCREEN) { inclusive = true } }
                             }
                         },
-                        enabled = state.selected != -1,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                        ),
+                        enabled = state.selected != -1, // Jab tak kuch select na ho, button band rahega
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text(
-                            text = if (state.index == state.questions.lastIndex) "Finish Test" else "Next Question",
-                            fontSize = 18.sp, fontWeight = FontWeight.Bold
-                        )
+                        Text(if (state.index == state.questions.lastIndex) "Finish Test" else "Next Question",
+                            fontSize = 17.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
     ) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            /* --- Top Header (Quiz Info) --- */
-            Box(modifier = Modifier.fillMaxWidth().height(180.dp).background(quizGradient).padding(20.dp)) {
+            /* --- Header --- */
+            Box(modifier = Modifier.fillMaxWidth().height(160.dp).background(quizGradient).padding(20.dp)) {
                 Column(modifier = Modifier.statusBarsPadding()) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("$subject Quiz", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Surface(color = Color.White.copy(0.2f), shape = CircleShape) {
-                            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(timeString, color = Color.White, fontWeight = FontWeight.Bold)
-                            }
+                        Text(subject, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                        Surface(color = Color.White.copy(0.2f), shape = RoundedCornerShape(8.dp)) {
+                            Text(timeString, color = Color.White, modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Bold)
                         }
                     }
                     Spacer(Modifier.height(20.dp))
                     LinearProgressIndicator(
                         progress = { (state.index + 1f) / state.questions.size },
                         modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                        color = Color.White,
-                        trackColor = Color.White.copy(0.3f)
+                        color = Color.White, trackColor = Color.White.copy(0.3f)
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Text("Question ${state.index + 1} of ${state.questions.size}", color = Color.White.copy(0.8f))
                 }
             }
 
-            /* --- Question & Options --- */
-            Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-                Text(
-                    text = question.question,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(32.dp))
+            /* --- Question & Reselectable Options --- */
+            Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+                Text(text = question.question, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(24.dp))
 
                 val options = listOf(question.optionA, question.optionB, question.optionC, question.optionD)
+
                 options.forEachIndexed { index, option ->
+                    // Selection state check
+                    val isSelected = state.selected == index
+
                     QuizOptionItem(
                         text = option,
-                        isSelected = state.selected == index,
-                        onClick = { viewModel.selectOption(index) }
+                        isSelected = isSelected,
+                        onClick = {
+                            viewModel.selectOption(index)
+                        }
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
                 }
             }
         }
     }
 }
-
 @Composable
 fun QuizOptionItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant

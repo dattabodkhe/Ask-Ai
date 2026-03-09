@@ -2,6 +2,9 @@ package com.example.learningai.classroom
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,24 +35,33 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
-/* --- 1. MESSAGE MODEL (Ye zaroori hai error hatane ke liye) --- */
+
+import com.example.learningai.model.Contact
+import com.example.learningai.premission.getContacts
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+
 data class Message(
     val text: String = "",
     val senderId: String = "",
     val senderName: String = "User",
-    val timestamp: Timestamp? = null,
-    val type: String = "text"
+    val timestamp: com.google.firebase.Timestamp? = null,
+    val type: String = "text",
+    val questionList: List<String> = emptyList(),
+    val questionCount: Int = 0,
+    val difficulty: String = "EASY"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClassroomChatScreen(
-    navController: NavController,
-    classId: String
-) {
+fun ClassroomChatScreen(navController: NavController, classId: String) {
     val firestore = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
@@ -58,43 +70,53 @@ fun ClassroomChatScreen(
     var memberCount by remember { mutableStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
 
+    var showContactPopup by remember { mutableStateOf(false) }
+    var contactsList by remember { mutableStateOf<List<Contact>>(emptyList()) }
+    var selectedContactNumber by remember { mutableStateOf<String?>(null) }
+    var isUpdatingMember by remember { mutableStateOf(false) }
+
     val listState = rememberLazyListState()
 
-    // FETCH CLASSROOM INFO
+    // --- 1. FULLY WORKING PERMISSION LAUNCHER ---
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            scope.launch {
+                contactsList = withContext(Dispatchers.IO) { getContacts(context) }
+                showContactPopup = true
+            }
+        } else {
+            Toast.makeText(context, "Permission denied to read contacts", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // --- 2. AUTO-SCROLL LOGIC ---
+    // Har baar jab messages ki list badlegi, niche scroll karega
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
     LaunchedEffect(classId) {
         val doc = firestore.collection("classrooms").document(classId).get().await()
         if (doc.exists()) {
             classroomName = doc.getString("name") ?: "Classroom"
             inviteCode = doc.getString("inviteCode") ?: ""
-            val members = doc.get("members") as? List<*>
-            memberCount = members?.size ?: 0
+            memberCount = (doc.get("members") as? List<*>)?.size ?: 0
         }
     }
 
-    // 2. REAL-TIME MESSAGES LISTENER (Fixed with DisposableEffect)
     DisposableEffect(classId) {
-        val query = firestore.collection("classrooms")
-            .document(classId)
-            .collection("messages")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
-
-        val registration = query.addSnapshotListener { snapshot, error ->
-            if (error != null) return@addSnapshotListener
-            if (snapshot != null) {
-                messages = snapshot.toObjects(Message::class.java)
+        val registration = firestore.collection("classrooms").document(classId)
+            .collection("messages").orderBy("timestamp", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    messages = snapshot.toObjects(Message::class.java)
+                }
             }
-        }
-
-        onDispose {
-            registration.remove()
-        }
-    }
-
-    // Auto-scroll logic
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
-        }
+        onDispose { registration.remove() }
     }
 
     Scaffold(
@@ -117,6 +139,22 @@ fun ClassroomChatScreen(
                 actions = {
                     IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.MoreVert, null) }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Add Friends") },
+                            onClick = {
+                                showMenu = false
+                                // Permission check aur fetch logic
+                                val permission = android.Manifest.permission.READ_CONTACTS
+                                if (androidx.core.content.ContextCompat.checkSelfPermission(context, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                    scope.launch {
+                                        contactsList = withContext(Dispatchers.IO) { getContacts(context) }
+                                        showContactPopup = true
+                                    }
+                                } else {
+                                    permissionLauncher.launch(permission)
+                                }
+                            }
+                        )
                         DropdownMenuItem(text = { Text("Invite Code: $inviteCode") }, onClick = {})
                         DropdownMenuItem(text = { Text("Share Link") }, onClick = { shareClassroom(context, classroomName, inviteCode) })
                     }
@@ -125,68 +163,121 @@ fun ClassroomChatScreen(
         },
         bottomBar = {
             Surface(tonalElevation = 8.dp) {
-                Row(
-                    modifier = Modifier.padding(12.dp).navigationBarsPadding().imePadding(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.padding(12.dp).navigationBarsPadding().imePadding(), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
+                        value = messageText, onValueChange = { messageText = it },
                         placeholder = { Text("Type a message...") },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(24.dp)
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(24.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     FloatingActionButton(
                         onClick = {
                             if (messageText.isNotBlank()) {
-                                val msg = Message(
-                                    text = messageText,
-                                    senderId = currentUser?.uid ?: "",
-                                    senderName = currentUser?.displayName ?: "User",
-                                    timestamp = Timestamp.now(),
-                                    type = "text"
-                                )
-                                firestore.collection("classrooms").document(classId)
-                                    .collection("messages").add(msg)
+                                val msg = Message(text = messageText, senderId = currentUser?.uid ?: "", senderName = currentUser?.displayName ?: "User", timestamp = Timestamp.now())
+                                firestore.collection("classrooms").document(classId).collection("messages").add(msg)
                                 messageText = ""
                             }
                         },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp),
-                        shape = CircleShape
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
+                        containerColor = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp), shape = CircleShape
+                    ) { Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color.White, modifier = Modifier.size(20.dp)) }
                 }
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background)
-        ) {
-            AIInviteCard(onInviteClick = {
-                navController.navigate(Routes.CREATE_AI_QUESTION)
-            })
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                AIInviteCard(onInviteClick = { navController.navigate(Routes.CREATE_AI_QUESTION) })
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 20.dp)
-            ) {
-                items(messages) { msg ->
-                    val isMe = msg.senderId == currentUser?.uid
-                    MessageBubble(msg, isMe, onJoinQuiz = {
-                        navController.navigate("${Routes.QUESTIONSCREEN}/$classId/${msg.text}/10/MEDIUM")
-                    })
+                // LazyColumn with listState for Auto-Scroll
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(messages) { msg ->
+                        val isMe = msg.senderId == currentUser?.uid
+                        MessageBubble(msg, isMe, onJoinQuiz = {
+                            if (msg.type == "ai_questions" && msg.questionCount > 0) {
+                                navController.navigate("${Routes.QUESTIONSCREEN}/$classId/${msg.text}/${msg.questionCount}/${msg.difficulty}")
+                            }
+                        })
+                    }
                 }
+            }
+
+            // --- Working Contact Popup ---
+            if (showContactPopup) {
+                AlertDialog(
+                    onDismissRequest = { showContactPopup = false },
+                    confirmButton = {
+                        Button(
+                            enabled = selectedContactNumber != null && !isUpdatingMember,
+                            onClick = {
+                                isUpdatingMember = true
+                                firestore.collection("classrooms").document(classId)
+                                    .update("members", FieldValue.arrayUnion(selectedContactNumber))
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Friend Added!", Toast.LENGTH_SHORT).show()
+                                        showContactPopup = false
+                                        isUpdatingMember = false
+                                        // Refresh member count
+                                        memberCount++
+                                    }
+                                    .addOnFailureListener {
+                                        isUpdatingMember = false
+                                        Toast.makeText(context, "Failed to add", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        ) {
+                            if(isUpdatingMember) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Add Now")
+                            }
+                        }
+                    },
+                    dismissButton = { TextButton(onClick = { showContactPopup = false }) { Text("Cancel") } },
+                    title = { Text("Select Friend", fontWeight = FontWeight.Bold) },
+                    text = {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().height(350.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color.LightGray)
+                        ) {
+                            if (contactsList.isEmpty()) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("No contacts found", color = Color.Gray)
+                                }
+                            } else {
+                                LazyColumn {
+                                    items(contactsList) { contact ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { selectedContactNumber = contact.number }
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            RadioButton(
+                                                selected = (selectedContactNumber == contact.number),
+                                                onClick = { selectedContactNumber = contact.number }
+                                            )
+                                            Column(modifier = Modifier.padding(start = 8.dp)) {
+                                                Text(contact.name, fontWeight = FontWeight.Medium)
+                                                Text(contact.number, style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
             }
         }
     }
 }
-
-/* --- COMPONENTS --- */
+/* --- UPDATED COMPONENTS (UI Same, Logic New) --- */
 
 @Composable
 fun MessageBubble(msg: Message, isMe: Boolean, onJoinQuiz: () -> Unit) {
@@ -206,30 +297,39 @@ fun MessageBubble(msg: Message, isMe: Boolean, onJoinQuiz: () -> Unit) {
                 bottomStart = if (isMe) 16.dp else 0.dp,
                 bottomEnd = if (isMe) 0.dp else 16.dp
             ),
+            // AI Quiz ke liye special color
             color = if (isAiQuiz) MaterialTheme.colorScheme.primaryContainer else (if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
             tonalElevation = 2.dp
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (isAiQuiz) {
+                    // --- AI QUIZ CARD UI ---
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🤖", fontSize = 20.sp)
                         Spacer(Modifier.width(8.dp))
-                        Text("AI QUIZ CHALLENGE", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                        Text("AI CHALLENGE", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("Subject: ${msg.text}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = msg.text, fontWeight = FontWeight.Bold, fontSize = 18.sp) // Subject Name
+                    Text(text = "${msg.questionCount} Questions • ${msg.difficulty}", style = MaterialTheme.typography.labelSmall)
+
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = onJoinQuiz, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                        Text("START QUIZ", fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = onJoinQuiz,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("START QUIZ", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 } else {
+                    // Normal Message
                     Text(text = msg.text, color = if (isMe) Color.White else MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
     }
 }
-
 @Composable
 fun AIInviteCard(onInviteClick: () -> Unit) {
     Card(
@@ -252,7 +352,6 @@ fun AIInviteCard(onInviteClick: () -> Unit) {
     }
 }
 
-/* SHARE FUNCTION (Ye missing tha code mein) */
 fun shareClassroom(context: Context, name: String, code: String) {
     val sendIntent: Intent = Intent().apply {
         action = Intent.ACTION_SEND

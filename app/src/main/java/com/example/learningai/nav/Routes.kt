@@ -1,4 +1,5 @@
 package com.example.learningai.nav
+
 object Routes {
     const val HOME = "home"
     const val ROLE_SELECTION = "role_selection"
@@ -16,5 +17,12 @@ object Routes {
     const val CONTACTS = "contacts"
     const val SELECT_CLASSROOM = "select_classroom"
     const val PRIVACY_POLICY = "privacy_policy"
-    const val SETTINGS= "settings"
+    const val SETTINGS = "settings"
+
+    fun resultRoute(
+        classroomId: String,
+        score: Int,
+        totalQuestions: Int,
+        userId: String
+    ) = "$RESULT/$classroomId/$score/$totalQuestions/$userId"
 }

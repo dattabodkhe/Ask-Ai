@@ -23,6 +23,7 @@ import com.example.learningai.nav.Routes
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,17 +76,18 @@ fun CreateAIquestion(
                 Button(
                     onClick = {
                         showOptions = false
-                        val dummyQuestions = listOf(
-                            "What is $selectedSubject?",
-                            "Explain the importance of $selectedSubject.",
-                            "Describe a key concept in $selectedSubject."
+                        val encodedSubject = Uri.encode(selectedSubject.trim())
+
+                        navController.navigate(
+                            "${Routes.PREVIEW_QUESTIONS}/TEMP_ID/$encodedSubject/${questionCount.trim().toInt()}/${difficulty.name}"
                         )
-                        val jsonString = Gson().toJson(dummyQuestions)
-                        val encodedJson = Uri.encode(jsonString)
-                        navController.navigate("${Routes.PREVIEW_QUESTIONS}/TEMP_ID/$encodedJson")
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) { Text("Send in Classroom") }
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Send in Classroom")
+                }
             },
             dismissButton = {
                 TextButton(onClick = {
@@ -209,7 +211,9 @@ fun CreateAIquestion(
                                     colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
                                 )
                                 Text(
-                                    level.name.lowercase().capitalize(),
+                                    level.name.lowercase().replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
+                                    },
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }

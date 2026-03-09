@@ -22,17 +22,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.learningai.ai.AiRepository
 import com.example.learningai.nav.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-// 1. DATA CLASS (Ye missing tha isliye 'Unresolved reference' aa raha tha)
 data class ClassroomUI(
     val id: String,
     val name: String,
@@ -44,32 +43,34 @@ data class ClassroomUI(
 @Composable
 fun SelectClassroomScreen(
     navController: NavController,
-    questionsJson: String
+    subject: String,
+    count: Int,
+    difficulty: String
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val firestore = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // 'by' use karne ke liye ye imports upar hone chahiye (maine add kar diye hain)
     var classrooms by remember { mutableStateOf<List<ClassroomUI>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isSending by remember { mutableStateOf(false) }
     var selectedClassroom by remember { mutableStateOf<ClassroomUI?>(null) }
 
-    val questionsList = remember(questionsJson) {
-        try {
-            Gson().fromJson(questionsJson, Array<String>::class.java).toList()
-        } catch (e: Exception) {
-            emptyList<String>()
-        }
-    }
+    val aiRepository = remember { AiRepository(context) }
+    var questionsList by remember { mutableStateOf<List<String>>(emptyList()) }
 
+    /* ---------------- FETCH CLASSROOMS ---------------- */
     LaunchedEffect(currentUser?.uid) {
-        if (currentUser == null) { isLoading = false; return@LaunchedEffect }
+        if (currentUser == null) {
+            isLoading = false
+            return@LaunchedEffect
+        }
         try {
             val snapshot = firestore.collection("classrooms")
-                .whereArrayContains("members", currentUser.uid).get().await()
+                .whereArrayContains("members", currentUser.uid)
+                .get()
+                .await()
 
             classrooms = snapshot.documents.map { doc ->
                 val membersList = doc.get("members") as? List<*> ?: emptyList<Any>()
@@ -81,9 +82,28 @@ fun SelectClassroomScreen(
                 )
             }
         } catch (e: Exception) {
-            Log.e("FIRESTORE", "${e.message}")
+            Log.e("FIRESTORE", e.message ?: "Error")
         } finally {
             isLoading = false
+        }
+    }
+
+    /* ---------------- GENERATE AI QUESTIONS ---------------- */
+    LaunchedEffect(Unit) {
+        try {
+            val prompt = """
+Generate exactly $count $difficulty level multiple choice questions for '$subject'.
+Return only clean questions.
+""".trimIndent()
+
+            val response = aiRepository.chat(prompt)
+
+            questionsList = response.split("\n")
+                .filter { it.isNotBlank() }
+                .map { it.replace(Regex("^\\d+\\.\\s*"), "").trim() }
+
+        } catch (e: Exception) {
+            Toast.makeText(context, "AI Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -98,6 +118,11 @@ fun SelectClassroomScreen(
                 ) {
                     Button(
                         onClick = {
+                            if (questionsList.isEmpty()) {
+                                Toast.makeText(context, "Questions not ready yet", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
                             isSending = true
                             scope.launch {
                                 try {
@@ -105,9 +130,11 @@ fun SelectClassroomScreen(
                                         "senderId" to currentUser?.uid,
                                         "senderName" to (currentUser?.displayName ?: "User"),
                                         "questions" to questionsList,
-                                        "text" to "AI Quiz: ${selectedClassroom!!.subject}",
+                                        "text" to subject,
                                         "timestamp" to FieldValue.serverTimestamp(),
-                                        "type" to "ai_questions"
+                                        "type" to "ai_questions",
+                                        "difficulty" to difficulty,
+                                        "questionCount" to count
                                     )
 
                                     withContext(Dispatchers.IO) {
@@ -119,9 +146,11 @@ fun SelectClassroomScreen(
                                     }
 
                                     Toast.makeText(context, "Quiz Shared! 🤖", Toast.LENGTH_SHORT).show()
+
                                     navController.navigate(Routes.HOME) {
                                         popUpTo(0)
                                     }
+
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                                 } finally {
@@ -129,23 +158,37 @@ fun SelectClassroomScreen(
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(20.dp).height(56.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                            .height(56.dp),
                         enabled = !isSending,
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        if (isSending) CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                        else Text("Post to ${selectedClassroom!!.name}")
+                        if (isSending) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        } else {
+                            Text("Post to ${selectedClassroom!!.name}")
+                        }
                     }
                 }
             }
         }
     ) { innerPadding ->
+
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // Header
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    )
                     .statusBarsPadding()
                     .padding(16.dp)
             ) {
@@ -153,7 +196,12 @@ fun SelectClassroomScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                     }
-                    Text("Select Group", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Select Group",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -168,7 +216,6 @@ fun SelectClassroomScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(classrooms) { classroom ->
-                        // 2. CLASSROOM CARD CALL (Fixes unresolved ClassroomCard)
                         ClassroomCard(
                             classroom = classroom,
                             isSelected = selectedClassroom?.id == classroom.id
@@ -182,19 +229,31 @@ fun SelectClassroomScreen(
     }
 }
 
-// 3. CLASSROOM CARD COMPOSABLE (Isse errors 189, 191, etc. solve honge)
 @Composable
-fun ClassroomCard(classroom: ClassroomUI, isSelected: Boolean, onSelect: () -> Unit) {
+fun ClassroomCard(
+    classroom: ClassroomUI,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onSelect() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(0.4f)
-            else MaterialTheme.colorScheme.surfaceVariant.copy(0.3f)
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer.copy(0.4f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(0.3f)
         ),
-        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+        border = if (isSelected)
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else null
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             RadioButton(selected = isSelected, onClick = onSelect)
             Column {
                 Text(text = classroom.name, fontWeight = FontWeight.Bold)
