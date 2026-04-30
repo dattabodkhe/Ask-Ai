@@ -8,9 +8,12 @@
 **LearningAI** is a sophisticated Android application that merges **Generative AI** with **Social Learning**. It enables a real-time, role-based classroom environment where AI-generated assessments are integrated directly into a collaborative chat workflow.
 
 ---
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dattabodkhe/learning-Ai-/main/learning%20ai%20.png" width="100%" alt="LearningAI Project Showcase">
+  <img src="learning%20ai%20.png" width="100%" alt="LearningAI Project Showcase">
 </p>
+
+---
 
 ## ✨ Key Features
 
@@ -34,8 +37,6 @@
 
 The app is built using **Clean Architecture** principles to ensure high maintainability and scalability.
 
-
-
 * **UI:** Jetpack Compose (Declarative UI)
 * **Architecture:** MVVM (Model-View-ViewModel)
 * **State Management:** StateFlow & SharedFlow (Reactive programming)
@@ -46,7 +47,6 @@ The app is built using **Clean Architecture** principles to ensure high maintain
 ---
 
 ## 📂 System Design (Package Structure)
-
 ```text
 com.example.learningai
 ├── 📁 classroom     # Real-time chat, AI Invites, Member Management
@@ -55,7 +55,6 @@ com.example.learningai
 ├── 📁 nav           # Type-safe Navigation Graph & Route Definitions
 ├── 📁 repository    # Abstracted Data Layer (Firebase/API)
 └── 📁 user          # Authentication and User Profile Logic
-🔒 Security Implementation
 Unlike basic apps, LearningAI implements professional-grade security:
 
 Member Validation: Custom rules validate user existence in a classroom before allowing data access.
