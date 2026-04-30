@@ -8,6 +8,9 @@
 **LearningAI** is a sophisticated Android application that merges **Generative AI** with **Social Learning**. It enables a real-time, role-based classroom environment where AI-generated assessments are integrated directly into a collaborative chat workflow.
 
 ---
+<p align="center">
+  <img src="images/learning_ai.png" width="100%" alt="LearningAI Project Showcase">
+</p>
 
 ## ✨ Key Features
 
