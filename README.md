@@ -9,7 +9,7 @@
 
 ---
 <p align="center">
-  <img src="images/learning_ai.png" width="100%" alt="LearningAI Project Showcase">
+  <img src="https://raw.githubusercontent.com/dattabodkhe/learning-Ai-/main/learning%20ai%20.png" width="100%" alt="LearningAI Project Showcase">
 </p>
 
 ## ✨ Key Features
