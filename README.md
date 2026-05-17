@@ -3,7 +3,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-purple.svg?style=flat&logo=kotlin)](https://kotlinlang.org/)
 [![Compose](https://img.shields.io/badge/Jetpack_Compose-Material_3-green.svg?style=flat&logo=android)](https://developer.android.com/jetpack/compose)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange.svg?style=flat&logo=firebase)](https://firebase.google.com/)
-[![AI](https://img.shields.io/badge/AI-Gemini_Pro-blue.svg?style=flat&logo=google-gemini)](https://deepmind.google/technologies/gemini/)
+[![AI](https://img.shields.io/badge/Grok-Ai_Pro-blue.svg?style=flat&logo=google-gemini)](https://deepmind.google/technologies/gemini/)
 
 **LearningAI** is a sophisticated Android application that merges **Generative AI** with **Social Learning**. It enables a real-time, role-based classroom environment where AI-generated assessments are integrated directly into a collaborative chat workflow.
 
