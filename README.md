@@ -18,7 +18,7 @@
 ## ✨ Key Features
 
 ### 🤖 AI-Powered Assessment Engine
-* **On-Demand Quiz Generation:** Leverages the **Gemini Pro API** to generate context-aware MCQs based on specific subjects and difficulty levels.
+* **On-Demand Quiz Generation:** Leverages the **Grok Pro API** to generate context-aware MCQs based on specific subjects and difficulty levels.
 * **Smart Prompting:** A dynamic "AI Invite Card" system within the chat to trigger quiz generation for the group instantly.
 
 ### 🏛 Real-time Classroom & Collaboration
